@@ -1,5 +1,7 @@
 /*
  * Entry-Based Heap Memory Manager
+ * LCAB = Linked Chunk Allocation Block
+ * the 'k_' prefix is for marking that these functions are part of the kernel
  *
  * - Variable-size allocations
  * - Automatic coalescing of adjacent free blocks (reduces fragmentation)
