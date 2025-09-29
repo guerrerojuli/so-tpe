@@ -6,6 +6,5 @@
 void timer_handler();
 int ticks_elapsed();
 int seconds_elapsed();
-void delay(uint64_t milis);
 
 #endif

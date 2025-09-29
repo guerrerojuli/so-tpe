@@ -4,7 +4,8 @@
 #define MAX_ARGS 10
 
 // Estructura para definir comandos
-typedef struct {
+typedef struct
+{
     char *name;
     int (*func)(void);
     char *description;
@@ -19,16 +20,12 @@ extern int arg_count;
 extern command clear_cmd;
 extern command echo_cmd;
 extern command exit_cmd;
-extern command font_cmd;
 extern command help_cmd;
-extern command time_cmd;
 extern command man_cmd;
-extern command time_cmd;
-extern command registers_cmd;
 extern command divzero_cmd;
 extern command invop_cmd;
 
 // Array de todos los comandos (definido en shell.c)
 extern command *all_commands[];
 
-#endif /* COMMANDS_H */ 
+#endif /* COMMANDS_H */

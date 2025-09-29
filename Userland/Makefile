@@ -1,6 +1,6 @@
 include Makefile.inc
 
-all: libc shell minigolf
+all: libc shell
 
 libc:
 	cd libc; make
@@ -8,13 +8,9 @@ libc:
 shell: libc
 	cd shell; make
 
-minigolf: libc
-	cd minigolf; make
-
 clean:
 	cd libc; make clean
 	cd shell; make clean
-	cd minigolf; make clean
 	rm -rf *.bin
 
-.PHONY: libc shell minigolf all clean
+.PHONY: libc shell all clean

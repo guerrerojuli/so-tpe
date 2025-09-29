@@ -12,45 +12,46 @@ void __attribute__((noreturn)) __stack_chk_fail(void)
 	char error_msg[] = "*** KERNEL PANIC: Stack corruption detected! System halted ***\n";
 	sys_write(2, error_msg, sizeof(error_msg) - 1);
 	// Halt the CPU in an infinite loop
-	while (1) {
+	while (1)
+	{
 		// Disable interrupts and halt
 		_cli();
 		_hlt();
 	}
 }
 
-void * memset(void * destination, int32_t c, uint64_t length)
+void *memset(void *destination, int32_t c, uint64_t length)
 {
 	uint8_t chr = (uint8_t)c;
-	char * dst = (char*)destination;
+	char *dst = (char *)destination;
 
-	while(length--)
+	while (length--)
 		dst[length] = chr;
 
 	return destination;
 }
 
-void * memcpy(void * destination, const void * source, uint64_t length)
+void *memcpy(void *destination, const void *source, uint64_t length)
 {
 	/*
-	* memcpy does not support overlapping buffers, so always do it
-	* forwards. (Don't change this without adjusting memmove.)
-	*
-	* For speedy copying, optimize the common case where both pointers
-	* and the length are word-aligned, and copy word-at-a-time instead
-	* of byte-at-a-time. Otherwise, copy by bytes.
-	*
-	* The alignment logic below should be portable. We rely on
-	* the compiler to be reasonably intelligent about optimizing
-	* the divides and modulos out. Fortunately, it is.
-	*/
+	 * memcpy does not support overlapping buffers, so always do it
+	 * forwards. (Don't change this without adjusting memmove.)
+	 *
+	 * For speedy copying, optimize the common case where both pointers
+	 * and the length are word-aligned, and copy word-at-a-time instead
+	 * of byte-at-a-time. Otherwise, copy by bytes.
+	 *
+	 * The alignment logic below should be portable. We rely on
+	 * the compiler to be reasonably intelligent about optimizing
+	 * the divides and modulos out. Fortunately, it is.
+	 */
 	uint64_t i;
 
 	if ((uint64_t)destination % sizeof(uint32_t) == 0 &&
-		(uint64_t)source % sizeof(uint32_t) == 0 &&
-		length % sizeof(uint32_t) == 0)
+			(uint64_t)source % sizeof(uint32_t) == 0 &&
+			length % sizeof(uint32_t) == 0)
 	{
-		uint32_t *d = (uint32_t *) destination;
+		uint32_t *d = (uint32_t *)destination;
 		const uint32_t *s = (const uint32_t *)source;
 
 		for (i = 0; i < length / sizeof(uint32_t); i++)
@@ -58,8 +59,8 @@ void * memcpy(void * destination, const void * source, uint64_t length)
 	}
 	else
 	{
-		uint8_t * d = (uint8_t*)destination;
-		const uint8_t * s = (const uint8_t*)source;
+		uint8_t *d = (uint8_t *)destination;
+		const uint8_t *s = (const uint8_t *)source;
 
 		for (i = 0; i < length; i++)
 			d[i] = s[i];
@@ -68,48 +69,37 @@ void * memcpy(void * destination, const void * source, uint64_t length)
 	return destination;
 }
 
-void * memmove(void * destination, const void * source, uint64_t length)
+void *memmove(void *destination, const void *source, uint64_t length)
 {
 	/*
-	* memmove handles overlapping buffers by copying in the appropriate direction.
-	* If dest > src, copy backwards to avoid overwriting source data.
-	* If dest < src, copy forwards.
-	*/
-	uint8_t * d = (uint8_t*)destination;
-	const uint8_t * s = (const uint8_t*)source;
+	 * memmove handles overlapping buffers by copying in the appropriate direction.
+	 * If dest > src, copy backwards to avoid overwriting source data.
+	 * If dest < src, copy forwards.
+	 */
+	uint8_t *d = (uint8_t *)destination;
+	const uint8_t *s = (const uint8_t *)source;
 
-	if (d == s || length == 0) {
+	if (d == s || length == 0)
+	{
 		return destination;
 	}
 
-	if (d > s && d < s + length) {
+	if (d > s && d < s + length)
+	{
 		// Overlapping, copy backwards
-		for (uint64_t i = length; i > 0; i--) {
+		for (uint64_t i = length; i > 0; i--)
+		{
 			d[i - 1] = s[i - 1];
 		}
-	} else {
+	}
+	else
+	{
 		// Non-overlapping or dest < src, copy forwards
-		for (uint64_t i = 0; i < length; i++) {
+		for (uint64_t i = 0; i < length; i++)
+		{
 			d[i] = s[i];
 		}
 	}
 
 	return destination;
-}
-
-void uint64_to_hex_string(uint64_t num, char *buffer, uint16_t buffer_size) {
-    // El buffer debe ser lo suficientemente grande para contener la cadena y el \0. Para un entero de 64 bits necesitas 16 caracteres + 1 (el null)
-    if (buffer_size < 17) {  // 16 caracteres para 64 bits en hex + 1 para el terminador nulo
-        buffer[0] = '\0';
-        return;
-    }
-
-    const char hex_digits[] = "0123456789ABCDEF";
-
-    // Empieza desde el final del buffer
-    buffer[16] = '\0';  // Terminador nulo
-    for (int i = 15; i >= 0; --i) {
-        buffer[i] = hex_digits[num & 0xF];  // Obtiene el último dígito hexadecimal
-        num >>= 4;  // Desplaza el número 4 bits a la derecha
-    }
 }

@@ -4,7 +4,6 @@
 #include "string.h"
 #include "stdlib.h"
 #include "commands/commands.h"
-#include "rtc.h"
 #define MAX_COMMAND_LENGTH 256
 
 // Variables globales para parsear comandos
@@ -16,104 +15,110 @@ int arg_count = 0;
 extern command clear_cmd;
 extern command echo_cmd;
 extern command exit_cmd;
-extern command font_cmd;
 extern command help_cmd;
-extern command time_cmd;
 extern command man_cmd;
-extern command registers_cmd;
 extern command divzero_cmd;
 extern command invop_cmd;
-extern command play_cmd;
 
 // Array de todos los comandos
 command *all_commands[] = {
     &clear_cmd,
     &echo_cmd,
     &exit_cmd,
-    &font_cmd,
     &help_cmd,
-    &time_cmd,
     &man_cmd,
-    &registers_cmd,
     &divzero_cmd,
     &invop_cmd,
-    &play_cmd,
     NULL // Terminator
 };
 
 // Función para parsear la línea de comando
-void parse_command(char *input) {
+void parse_command(char *input)
+{
     arg_count = 0;
 
     // First call to strtok with the input string
     char *token = strtok(input, " \t");
-    
+
     // Continue tokenizing until no more tokens or max args reached
-    while (token != NULL && arg_count < MAX_ARGS - 1) {
+    while (token != NULL && arg_count < MAX_ARGS - 1)
+    {
         current_args[arg_count++] = token;
-        token = strtok(NULL, " \t");  // Subsequent calls with NULL
+        token = strtok(NULL, " \t"); // Subsequent calls with NULL
     }
-    
+
     current_args[arg_count] = NULL;
 }
 
 // Función para ejecutar un comando
-int execute_command(char *cmd_name) {
-    for (int i = 0; all_commands[i] != NULL; i++) {
-        if (strcmp(cmd_name, all_commands[i]->name) == 0) {
+int execute_command(char *cmd_name)
+{
+    for (int i = 0; all_commands[i] != NULL; i++)
+    {
+        if (strcmp(cmd_name, all_commands[i]->name) == 0)
+        {
             return all_commands[i]->func();
         }
     }
-    
+
     // Comando no encontrado
-    printf("Command '%s' not found. Type 'help' for available commands.\n", (void**)&cmd_name);
+    printf("Command '%s' not found. Type 'help' for available commands.\n", (void **)&cmd_name);
     return -1;
 }
 
 // Función principal de la shell
-void shell_loop(void) {
+void shell_loop(void)
+{
     int running = 1;
-    
-    while (running) {
+
+    while (running)
+    {
         // Mostrar prompt
         printf("$ ", NULL);
-        
+
         // Leer input del usuario
-        if (fgets(input_buffer, MAX_COMMAND_LENGTH, STDIN) != NULL) {
+        if (fgets(input_buffer, MAX_COMMAND_LENGTH, STDIN) != NULL)
+        {
             // Remove the newline character if present
             size_t len = strlen(input_buffer);
-            if (len > 0 && input_buffer[len - 1] == '\n') {
+            if (len > 0 && input_buffer[len - 1] == '\n')
+            {
                 input_buffer[len - 1] = '\0';
             }
-        } else {
+        }
+        else
+        {
             // If fgets fails, set empty string
             input_buffer[0] = '\0';
         }
-        
+
         // Si la línea está vacía, continuar
-        if (strlen(input_buffer) == 0) {
+        if (strlen(input_buffer) == 0)
+        {
             continue;
         }
-        
+
         // Parsear el comando
         parse_command(input_buffer);
-        
-        if (arg_count > 0) {
+
+        if (arg_count > 0)
+        {
             // Ejecutar el comando
             int result = execute_command(current_args[0]);
-            if (result == 1) { // exit command
+            if (result == 1)
+            { // exit command
                 running = 0;
             }
         }
     }
 }
 
-int main() {
+int main()
+{
     printf("Simple Shell v1.0\n", NULL);
-    printDate();
     printf("Type 'help' for available commands\n", NULL);
     printf("Type 'exit' to quit\n\n", NULL);
     shell_loop();
-    
+
     return 0;
 }
