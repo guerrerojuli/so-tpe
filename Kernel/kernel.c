@@ -53,6 +53,8 @@ void *initializeKernelBinary()
 }
 
 static KHEAPLCAB kernel_heap;
+static zone_t buddy_zone;
+static page_t buddy_pages[2048]; // Array para estructuras de página
 
 void initializeMemoryManagers()
 {
@@ -60,11 +62,22 @@ void initializeMemoryManagers()
 	uintptr_t heapEnd = (uintptr_t)SHELL_CODE_START;
 	uintptr_t totalSize = heapEnd - heapStart;
 
-	// Entry-based allocator: first half of available space
+	// Entry-based allocator: primera mitad del espacio
 	k_heapLCABInit(&kernel_heap);
 	k_heapLCABAddBlock(&kernel_heap, heapStart, totalSize / 2);
 
-	// Buddy allocator will use second half (when implemented)
+	// Buddy allocator: segunda mitad del espacio
+	uintptr_t buddyStart = heapStart + totalSize / 2;
+	uintptr_t buddySize = totalSize / 2;
+	uint64_t startPfn = buddyStart / PageSize;
+	uint64_t numPages = buddySize / PageSize;
+
+	// Limitar al tamaño del array de páginas
+	if (numPages > 2048)
+		numPages = 2048;
+
+	buddy_init(&buddy_zone, startPfn, numPages, buddy_pages);
+	buddy_add_memory(&buddy_zone, startPfn, numPages);
 }
 
 int main()

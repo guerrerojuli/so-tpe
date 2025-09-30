@@ -11,6 +11,6 @@ uint64_t sys_read(uint64_t fd, char *buf, uint64_t count);
 
 uint64_t sys_write(uint64_t fd, const char *buf, uint64_t count);
 
-uint64_t sys_clear_text_buffer_wrapper(void); // No necesita argumentos de registros directamente
+uint64_t sys_clear_text_buffer_wrapper(void);
 
 #endif
