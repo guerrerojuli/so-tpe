@@ -1,5 +1,5 @@
 /*
- * Entry-Based Heap Memory Manager
+ * Implicit free list allocator
  * LCAB = Linked Chunk Allocation Block
  * the 'k_' prefix is for marking that these functions are part of the kernel
  *
@@ -8,7 +8,7 @@
  * - First-fit allocation strategy (the first free chunk that is large enough is used)
  * - Each allocation has a small header overhead (8 bytes)
  * - Maximum allocation size: 2GB (due to 31-bit size field)
- * 
+ *
 */
 #include <stdint.h>
 #include "../include/lib.h"
@@ -50,15 +50,11 @@ typedef struct _KHEAPHDRLCAB {
  * size: Total size of this block in bytes (including the block header)
  * used: Total bytes currently allocated to users (not including headers)
  * next: Pointer to the next block in the linked list
- * lastdsize: Size of the largest free chunk we've seen (optimization hint)
- * lastdhdr: Pointer to that largest free chunk (optimization hint)
  */
 typedef struct _KHEAPBLOCKLCAB {
     uint32_t size;                       // Total block size
     uint32_t used;                       // Bytes allocated to users
     struct _KHEAPBLOCKLCAB *next;       // Next block in linked list
-    uint32_t lastdsize;                  // Largest free chunk size (optimization)
-    KHEAPHDRLCAB *lastdhdr;             // Pointer to largest free chunk
 } KHEAPBLOCKLCAB;
 
 /*
@@ -97,8 +93,6 @@ void k_heapLCABInit(KHEAPLCAB *heap) {
  * The block starts with a KHEAPBLOCKLCAB header, followed by a single
  * large free chunk.
  *
- * Memory layout after initialization:
- * [KHEAPBLOCKLCAB][KHEAPHDRLCAB (free chunk)][usable space]
  */
 int k_heapLCABAddBlock(KHEAPLCAB *heap, uintptr_t addr, uint32_t size) {
     KHEAPBLOCKLCAB *hb = (KHEAPBLOCKLCAB*)addr;
@@ -117,18 +111,14 @@ int k_heapLCABAddBlock(KHEAPLCAB *heap, uintptr_t addr, uint32_t size) {
     hdr = (KHEAPHDRLCAB*)&hb[1];
 
     // Set the chunk size: total block size minus block header minus some padding
-    // The 32 bytes padding is for safety/alignment
+    // 32 bytes padding is for safety/alignment
     hdr->flagsize = hb->size - (sizeof(KHEAPBLOCKLCAB) + 32);
 
-    // This is the first chunk, so no previous chunk
+    // first chunk, so no previous chunk
     hdr->prevsize = 0;
 
     // Increment block count
     ++heap->bcnt;
-
-    // No optimization data yet
-    hb->lastdsize = 0;
-    hb->lastdhdr = 0;
 
     return 1;
 }
@@ -145,14 +135,11 @@ int k_heapLCABAddBlock(KHEAPLCAB *heap, uintptr_t addr, uint32_t size) {
  * 1. Iterate through each block
  * 2. Within each block, iterate through chunks looking for a free one
  * 3. If a free chunk is large enough:
- *    a. If 2^n larger than needed, split it into two chunks
+ *    a. If a free chunk is more than (size + header + 16 bytes) large, we split it to avoid wasting space.
  *    b. Mark the chunk as used
  *    c. Update bookkeeping
  * 4. Return pointer to the user data (after the header)
  *
- * Splitting strategy:
- * If a free chunk is more than (size + header + 16 bytes) large,
- * we split it to avoid wasting space.
  */
 void* k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size) {
     KHEAPBLOCKLCAB *hb;
@@ -164,8 +151,7 @@ void* k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size) {
 
     // Iterate through all blocks
     for (hb = heap->fblock; hb; hb = hb->next) {
-        // Quick check: does this block have enough free space?
-        // (accounting for the new header we'll need to add)
+        // Check if this block have enough free space
         if ((hb->size - hb->used) >= (size + sizeof(KHEAPHDRLCAB))) {
             ++bc;
 
@@ -184,11 +170,8 @@ void* k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size) {
                 // Mask off the flag bit using 0x7fffffff
                 sz = hdr->flagsize & 0x7fffffff;
 
-                // Is this chunk free?
-                if (!fg) {
-                    // Is it large enough for our allocation?
-                    if (sz >= size) {
-                        // Should we split this chunk?
+                if (!fg) { //if Free chunk
+                    if (sz >= size) { // Large enough for our allocation
                         // Split if there's enough room for another chunk header + 16 bytes
                         if (sz > (size + sizeof(KHEAPHDRLCAB) + 16)) {
                             // Create a new chunk header after our allocation
@@ -205,7 +188,6 @@ void* k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size) {
                             hb->used += sizeof(KHEAPHDRLCAB);
                         } else {
                             // Don't split, just mark the whole chunk as used
-                            // The extra space becomes internal fragmentation
                             hdr->flagsize |= KHEAPFLAG_USED;
                         }
 
@@ -225,7 +207,7 @@ void* k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size) {
     }
 
     // No suitable free chunk found
-    return 0;  // NULL
+    return 0;
 }
 
 /*
@@ -236,12 +218,11 @@ void* k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size) {
  *
  * Algorithm:
  * 1. Find which block contains this pointer
- * 2. Get the chunk header (it's just before the pointer)
+ * 2. Get the chunk header (just before the pointer)
  * 3. Mark the chunk as free
- * 4. Try to coalesce with adjacent free chunks (reduce fragmentation)
- *    a. Merge with next chunk if it's free
- *    b. Merge with previous chunk if it's free
- * 5. Update optimization hints
+ * 4. Try to coalesce with adjacent free chunks
+ *    a. Merge with next chunk if free
+ *    b. Merge with previous chunk if free
  *
  * Coalescing:
  * When we free a chunk, we check the chunks immediately before and after.
@@ -259,17 +240,14 @@ void k_heapLCABFree(KHEAPLCAB *heap, void *ptr) {
         if (((uintptr_t)ptr > (uintptr_t)hb) &&
             ((uintptr_t)ptr < (uintptr_t)hb + hb->size)) {
 
-            // Found the block!
-
-            // Get the chunk header (it's immediately before the user data)
+            // Get the chunk header
             hdr = (KHEAPHDRLCAB*)((uintptr_t)ptr - sizeof(KHEAPHDRLCAB));
 
             // Mark this chunk as free by clearing the used flag
             hdr->flagsize &= ~KHEAPFLAG_USED;
 
             // Update the block's used count
-            // Note: we only subtract the data size, not the header
-            // (the header stays in the block regardless)
+            // we only subtract the data size, not the header
             hb->used -= (hdr->flagsize & 0x7fffffff);
 
             // Try to get the previous chunk header
@@ -294,7 +272,7 @@ void k_heapLCABFree(KHEAPLCAB *heap, void *ptr) {
             // If the next chunk exists and is free, merge with it
             if (nhdr) {
                 if (!(nhdr->flagsize & KHEAPFLAG_USED)) {
-                    // Merge: our chunk absorbs the next chunk
+                    // our chunk absorbs the next chunk
                     // Add next chunk's size plus its header overhead
                     hdr->flagsize += sizeof(KHEAPHDRLCAB) +
                                     (nhdr->flagsize & 0x7fffffff);
@@ -311,7 +289,6 @@ void k_heapLCABFree(KHEAPLCAB *heap, void *ptr) {
                 }
             }
 
-            // COALESCE WITH PREVIOUS CHUNK
             // If the previous chunk exists and is free, let it absorb us
             if (phdr) {
                 if (!(phdr->flagsize & KHEAPFLAG_USED)) {
@@ -323,7 +300,7 @@ void k_heapLCABFree(KHEAPLCAB *heap, void *ptr) {
                     // We eliminated a header
                     hb->used -= sizeof(KHEAPHDRLCAB);
 
-                    // Update what we consider "current" chunk
+                    // Update current chunk
                     hdr = phdr;
 
                     // Update the next chunk to point back to the merged chunk
@@ -335,19 +312,7 @@ void k_heapLCABFree(KHEAPLCAB *heap, void *ptr) {
                 }
             }
 
-            // OPTIMIZATION HINT
-            // Track the largest free chunk we've seen
-            // This can help future allocations find big chunks faster
-            sz = hdr->flagsize & 0x7fffffff;
-            if (sz > hb->lastdsize) {
-                hb->lastdsize = sz;
-                hb->lastdhdr = hdr;
-            }
-
             return;
         }
     }
-
-    // Pointer not found in any block - this could indicate corruption
-    // or a double-free. In a production system, might want to panic here.
 }
