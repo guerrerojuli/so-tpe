@@ -6,6 +6,7 @@
 #include <idtLoader.h>
 #include <syscalls.h>
 #include <registers.h>
+#include <memoryManager.h>
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -51,9 +52,25 @@ void *initializeKernelBinary()
 	return getStackBase();
 }
 
+static KHEAPLCAB kernel_heap;
+
+void initializeMemoryManagers()
+{
+	uintptr_t heapStart = (uintptr_t)getStackBase();
+	uintptr_t heapEnd = (uintptr_t)SHELL_CODE_START;
+	uintptr_t totalSize = heapEnd - heapStart;
+
+	// Entry-based allocator: first half of available space
+	k_heapLCABInit(&kernel_heap);
+	k_heapLCABAddBlock(&kernel_heap, heapStart, totalSize / 2);
+
+	// Buddy allocator will use second half (when implemented)
+}
+
 int main()
 {
 	load_idt();
+	initializeMemoryManagers();
 
 	EntryPoint entryPoint = (EntryPoint)SHELL_CODE_START;
 	entryPoint();
