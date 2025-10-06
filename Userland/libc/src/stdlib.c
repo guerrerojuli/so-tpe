@@ -1,5 +1,13 @@
 #include "stdlib.h"
 #include "ctype.h"
+#include "unistd.h"
+
+void exit(int status) {
+    uint64_t pid = sys_get_pid();
+    sys_kill_process(pid, (uint64_t)status);
+    // Should never reach here
+    while(1);
+}
 
 int atoi(const char *str){
     int num = 0;

@@ -1,5 +1,6 @@
 // Scheduler implementation - priority-based round-robin with aging
 
+#include <stddef.h>
 #include "include/scheduler.h"
 #include "include/list.h"
 #include "include/memoryManager.h"

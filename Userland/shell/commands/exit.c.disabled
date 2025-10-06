@@ -1,10 +1,12 @@
 #include "stdio.h"
 #include "stddef.h"
+#include "stdlib.h"
 #include "commands.h"
 
 static int exit_func(void) {
     printf("Goodbye!\n", NULL);
-    return 1; // Retorna 1 para indicar que debe salir
+    exit(0); // Exit the shell process
+    return 1; // Should never reach here
 }
 
 command exit_cmd = {

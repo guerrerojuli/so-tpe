@@ -14,7 +14,6 @@ int arg_count = 0;
 // Importamos los comandos de los módulos separados
 extern command clear_cmd;
 extern command echo_cmd;
-extern command exit_cmd;
 extern command help_cmd;
 extern command man_cmd;
 extern command divzero_cmd;
@@ -24,7 +23,6 @@ extern command invop_cmd;
 command *all_commands[] = {
     &clear_cmd,
     &echo_cmd,
-    &exit_cmd,
     &help_cmd,
     &man_cmd,
     &divzero_cmd,
@@ -69,9 +67,7 @@ int execute_command(char *cmd_name)
 // Función principal de la shell
 void shell_loop(void)
 {
-    int running = 1;
-
-    while (running)
+    while (1)
     {
         // Mostrar prompt
         printf("$ ", NULL);
@@ -104,11 +100,7 @@ void shell_loop(void)
         if (arg_count > 0)
         {
             // Ejecutar el comando
-            int result = execute_command(current_args[0]);
-            if (result == 1)
-            { // exit command
-                running = 0;
-            }
+            execute_command(current_args[0]);
         }
     }
 }
@@ -117,7 +109,7 @@ int main()
 {
     printf("Simple Shell v1.0\n", NULL);
     printf("Type 'help' for available commands\n", NULL);
-    printf("Type 'exit' to quit\n\n", NULL);
+    printf("To quit, close QEMU (Ctrl+A X in terminal)\n\n", NULL);
     shell_loop();
 
     return 0;

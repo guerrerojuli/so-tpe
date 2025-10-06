@@ -6,6 +6,8 @@
 void *memset(void *destination, int32_t character, uint64_t length);
 void *memcpy(void *destination, const void *source, uint64_t length);
 void *memmove(void *destination, const void *source, uint64_t length);
+uint64_t strlen(const char *str);
+char *strcpy(char *dest, const char *src);
 
 uint8_t inb(uint16_t port);
 void outb(uint16_t port, uint8_t value);

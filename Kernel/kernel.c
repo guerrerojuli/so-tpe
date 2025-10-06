@@ -57,8 +57,8 @@ void *initializeKernelBinary()
 	return getStackBase();
 }
 
-static KHEAPLCAB kernel_heap;
-static zone_t buddy_zone;
+KHEAPLCAB kernel_heap;
+zone_t buddy_zone;
 static page_t buddy_pages[2048]; // Array para estructuras de página
 
 void initializeMemoryManagers()

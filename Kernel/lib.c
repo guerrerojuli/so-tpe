@@ -10,7 +10,7 @@ void __attribute__((noreturn)) __stack_chk_fail(void)
 {
 	// Print a message to the console
 	char error_msg[] = "*** KERNEL PANIC: Stack corruption detected! System halted ***\n";
-	sys_write(2, error_msg, sizeof(error_msg) - 1);
+	sys_write(2, error_msg, sizeof(error_msg) - 1, 0, 0, 0);
 	// Halt the CPU in an infinite loop
 	while (1)
 	{
@@ -102,4 +102,22 @@ void *memmove(void *destination, const void *source, uint64_t length)
 	}
 
 	return destination;
+}
+
+uint64_t strlen(const char *str)
+{
+	uint64_t len = 0;
+	while (str[len] != '\0')
+	{
+		len++;
+	}
+	return len;
+}
+
+char *strcpy(char *dest, const char *src)
+{
+	char *original_dest = dest;
+	while ((*dest++ = *src++) != '\0')
+		;
+	return original_dest;
 }
