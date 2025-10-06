@@ -11,7 +11,6 @@
 
 static void setup_IDT_entry(int index, uint64_t offset);
 void load_idt();
-void enable_timer_interrupt();
 
 
 #endif // _IDTLOADER_H_

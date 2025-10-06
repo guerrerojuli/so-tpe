@@ -7,7 +7,4 @@ void timer_handler();
 int ticks_elapsed();
 int seconds_elapsed();
 
-// Initialize PIT to a given frequency (Hz)
-void pit_init(uint32_t frequency);
-
 #endif

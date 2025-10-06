@@ -21,7 +21,7 @@ typedef struct {
 #define IRQ1_ID 0x21
 #define SYSCALL_ID 0x80
 #define CODE_SEGMENT_SELECTOR 0x08
-#define PIC_MASTER_MASK_VALUE 0xFD  // Disable IRQ0 (timer), enable IRQ1 (keyboard)
+#define PIC_MASTER_MASK_VALUE 0xFC
 #define PIC_SLAVE_MASK_VALUE 0xFF
 DESCR_INT * idt = (DESCR_INT *) 0;	// IDT de 255 entradas
 
@@ -49,8 +49,4 @@ static void setup_IDT_entry (int index, uint64_t offset) {
   idt[index].access = ACS_INT;
   idt[index].cero = 0;
   idt[index].other_cero = (uint64_t) 0;
-}
-
-void enable_timer_interrupt() {
-	picMasterMask(0xFC); // Enable both IRQ0 (timer) and IRQ1 (keyboard)
 }

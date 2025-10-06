@@ -7,7 +7,6 @@
 #include <syscalls.h>
 #include <registers.h>
 #include <memoryManager.h>
-#include <scheduler.h>
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -85,16 +84,7 @@ int main()
 {
 	load_idt();
 	initializeMemoryManagers();
-	
-	// Initialize scheduler (but timer interrupt remains disabled)
-	scheduler_init();
-	
-	// Initialize video system before starting shell
-	// Clear both buffers to ensure clean state
-	clear_screen(0x000000);
-	swap_buffers();
 
-	// Run the shell (timer interrupt disabled, so no preemptive scheduling yet)
 	EntryPoint entryPoint = (EntryPoint)SHELL_CODE_START;
 	entryPoint();
 	return 0;

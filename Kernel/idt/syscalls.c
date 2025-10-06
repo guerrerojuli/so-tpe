@@ -3,7 +3,6 @@
 #include <consoleDriver.h>
 #include <keyboardDriver.h>
 #include <lib.h>
-#include <scheduler.h>
 
 enum
 {
@@ -51,19 +50,5 @@ uint64_t sys_write(uint64_t fd, const char *buf, uint64_t count)
 uint64_t sys_clear_text_buffer_wrapper(void)
 {
     console_clear();
-    return 0;
-}
-
-uint64_t sys_yield(void)
-{
-    // Return special non-zero to signal ASM to switch to returned RSP
-    // We pass current stack pointer context via intDispatcher; here just return 0 and let dispatcher set RAX
-    // The actual switch will be decided in intDispatcher where we have access to registers
-    return 0;
-}
-
-uint64_t sys_exit(void)
-{
-    scheduler_task_exit();
     return 0;
 }
