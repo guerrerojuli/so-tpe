@@ -80,12 +80,22 @@ SECTION .text
 
 	mov rdi, %1 ; pasaje de parametro (número de IRQ)
 	mov rsi, rsp ; pasaje del puntero a los registros
-	call irqDispatcher
+	call irqDispatcher ; returns next RSP in RAX or 0 to continue
 
 	; signal pic EOI (End of Interrupt)
 	mov al, 20h
 	out 20h, al
 
+	; Check if context switch is needed
+	cmp rax, 0
+	je .normal_irq_return
+
+	; Context switch: switch to next task stack and return into it
+	mov rsp, rax
+	popStateWithoutRax
+	ret
+
+.normal_irq_return:
 	popState
 	iretq
 %endmacro
@@ -96,6 +106,16 @@ SECTION .text
 	sti
 	call intDispatcher
 
+	; If RAX != 0, it contains a new stack pointer for context switch
+	cmp rax, 0
+	je .normal_syscall_return
+
+	; Context switch: switch RSP and return with 'ret' instead of 'iretq'
+	mov rsp, rax
+	popStateWithoutRax
+	ret
+
+.normal_syscall_return:
 	popStateWithoutRax
 	iretq
 %endmacro
