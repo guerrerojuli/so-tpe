@@ -4,6 +4,7 @@ GLOBAL picMasterMask
 GLOBAL picSlaveMask
 GLOBAL haltcpu
 GLOBAL _hlt
+GLOBAL _initialize_stack_frame
 
 ; Excepcion div zero y invalid opcode
 GLOBAL _exception0Handler, _exception6Handler
@@ -18,6 +19,7 @@ GLOBAL _exception0Handler
 EXTERN irqDispatcher
 EXTERN intDispatcher
 EXTERN exceptionDispatcher
+EXTERN schedule
 
 SECTION .text
 
@@ -143,9 +145,25 @@ picSlaveMask:
     retn
 
 
-;8254 Timer (Timer Tick)
+;8254 Timer (Timer Tick) - with context switch
 _irq00Handler:
-	irqHandlerMaster 0
+	pushState
+
+	mov rdi, 0
+	mov rsi, rsp
+	call irqDispatcher
+
+	; Context switch
+	mov rdi, rsp       ; Pass current RSP to scheduler
+	call schedule      ; Returns new RSP in RAX
+	mov rsp, rax       ; Switch to new process stack
+
+	; Signal PIC EOI
+	mov al, 20h
+	out 20h, al
+
+	popState
+	iretq
 
 ;Keyboard
 _irq01Handler:
@@ -165,6 +183,33 @@ _exception6Handler:
 haltcpu:
 	cli
 	hlt
+	ret
+
+; Initialize stack frame for new process
+; Args: RDI = wrapper, RSI = entry point, RDX = stack top, RCX = args
+; Returns: RAX = new stack pointer
+_initialize_stack_frame:
+	mov r8, rsp         ; Save current RSP
+	mov r9, rbp         ; Save current RBP
+
+	mov rsp, rdx        ; Switch to process stack
+	mov rbp, rdx
+
+	; Setup iretq frame
+	push 0x0            ; SS
+	push rdx            ; RSP
+	push 0x202          ; RFLAGS (IF=1)
+	push 0x8            ; CS
+	push rdi            ; RIP (wrapper function)
+
+	; Setup register state
+	mov rdi, rsi        ; First arg to wrapper (entry point)
+	mov rsi, rcx        ; Second arg to wrapper (args)
+	pushState           ; Push all 15 registers
+
+	mov rax, rsp        ; Return new stack position
+	mov rsp, r8         ; Restore original RSP
+	mov rbp, r9         ; Restore original RBP
 	ret
 
 SECTION .bss

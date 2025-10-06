@@ -7,7 +7,13 @@
 static uint64_t (*intHandlers[])(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint64_t rcx, uint64_t r8, uint64_t r9) = {
     [SYSCALL_READ] = sys_read,
     [SYSCALL_WRITE] = sys_write,
+    [SYSCALL_CREATE_PROCESS] = sys_create_process,
+    [SYSCALL_KILL_PROCESS] = sys_kill_process,
+    [SYSCALL_GET_PID] = sys_get_pid,
+    [SYSCALL_YIELD] = sys_yield,
+    [SYSCALL_SET_PRIORITY] = sys_set_priority,
     [SYSCALL_CLEAR_TEXT_BUFFER] = sys_clear_text_buffer_wrapper,
+    [SYSCALL_BLOCK] = sys_block,
 };
 
 uint64_t intDispatcher(const registers_t *registers)

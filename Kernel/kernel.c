@@ -7,6 +7,8 @@
 #include <syscalls.h>
 #include <registers.h>
 #include <memoryManager.h>
+#include <scheduler.h>
+#include <globals.h>
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -29,6 +31,9 @@ static const uint64_t PageSize = 0x1000;
 extern void start_userland();
 
 typedef int (*EntryPoint)();
+
+extern int idle_process(int argc, char **argv);
+extern void _sti();
 
 void clearBSS(void *bssAddress, uint64_t bssSize)
 {
@@ -62,7 +67,7 @@ void initializeMemoryManagers()
 	uintptr_t heapEnd = (uintptr_t)SHELL_CODE_START;
 	uintptr_t totalSize = heapEnd - heapStart;
 
-	// Entry-based allocator: primera mitad del espacio
+	// first Fit allocator: primera mitad del espacio
 	k_heapLCABInit(&kernel_heap);
 	k_heapLCABAddBlock(&kernel_heap, heapStart, totalSize / 2);
 
@@ -85,7 +90,21 @@ int main()
 	load_idt();
 	initializeMemoryManagers();
 
+	// Initialize scheduler
+	scheduler_init();
+
+	// Create IDLE process (PID 0)
+	int16_t default_fds[3] = {STDIN, STDOUT, STDERR};
+	create_process(idle_process, NULL, "idle", 0, default_fds, 1);
+
+	// Create shell as process (PID 1)
 	EntryPoint entryPoint = (EntryPoint)SHELL_CODE_START;
-	entryPoint();
+	create_process((MainFunction)entryPoint, NULL, "shell", 2, default_fds, 0);
+
+	// Enable interrupts and start scheduling
+	_sti();
+	yield();  // Start first context switch
+
+	// Should never reach here
 	return 0;
 }

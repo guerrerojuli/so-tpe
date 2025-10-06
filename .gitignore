@@ -11,3 +11,7 @@
 *.o
 
 .vscode
+
+CLAUDE.md
+TP_2_full.txt   
+claude_implementations/
