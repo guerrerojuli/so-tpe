@@ -19,7 +19,6 @@ extern int arg_count;
 // Declaraciones de funciones de comandos
 extern command clear_cmd;
 extern command echo_cmd;
-extern command exit_cmd;
 extern command help_cmd;
 extern command man_cmd;
 extern command divzero_cmd;
