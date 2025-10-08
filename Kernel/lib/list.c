@@ -1,11 +1,8 @@
 // Doubly-linked list implementation
-// Uses kernel's first-fit allocator for node allocation
 
 #include "../include/list.h"
 #include "../include/memoryManager.h"
 #include <stddef.h>
-
-extern KHEAPLCAB kernel_heap;
 
 void list_init(List *list) {
     list->head = NULL;
@@ -15,7 +12,7 @@ void list_init(List *list) {
 }
 
 Node *list_append(List *list, void *data) {
-    Node *node = (Node *)k_heapLCABAlloc(&kernel_heap, sizeof(Node));
+    Node *node = (Node *)mm_alloc(sizeof(Node));
 
     node->data = data;
     node->next = NULL;
@@ -33,7 +30,7 @@ Node *list_append(List *list, void *data) {
 }
 
 Node *list_prepend(List *list, void *data) {
-    Node *node = (Node *)k_heapLCABAlloc(&kernel_heap, sizeof(Node));
+    Node *node = (Node *)mm_alloc(sizeof(Node));
 
     node->data = data;
     node->next = list->head;
@@ -66,7 +63,7 @@ void *list_remove(List *list, Node *node) {
     list->size--;
 
     void *data = node->data;
-    k_heapLCABFree(&kernel_heap, node);
+    mm_free(node);
 
     return data;
 }

@@ -14,6 +14,9 @@
 #define SYSCALL_SET_PRIORITY 6
 #define SYSCALL_CLEAR_TEXT_BUFFER 7
 #define SYSCALL_BLOCK 8
+#define SYSCALL_MALLOC 9
+#define SYSCALL_FREE 10
+#define SYSCALL_MEM_STATE 11
 
 // I/O syscalls
 uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3);
@@ -27,5 +30,10 @@ uint64_t sys_get_pid(uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, ui
 uint64_t sys_yield(uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5, uint64_t _unused6);
 uint64_t sys_set_priority(uint64_t pid, uint64_t new_priority, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4);
 uint64_t sys_block(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
+
+// Memory management syscalls
+uint64_t sys_malloc(uint64_t size, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
+uint64_t sys_free(uint64_t ptr, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
+uint64_t sys_mem_state(uint64_t total_ptr, uint64_t free_ptr, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4);
 
 #endif

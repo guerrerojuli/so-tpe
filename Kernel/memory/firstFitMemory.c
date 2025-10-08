@@ -1,15 +1,8 @@
+#ifdef FIRSTFIT
+
 /*
- * Implicit free list allocator
- * LCAB = Linked Chunk Allocation Block
- * the 'k_' prefix is for marking that these functions are part of the kernel
- *
- * - Variable-size allocations
- * - Automatic coalescing of adjacent free blocks (reduces fragmentation)
- * - First-fit allocation strategy (the first free chunk that is large enough is used)
- * - Each allocation has a small header overhead (8 bytes)
- * - Maximum allocation size: 2GB (due to 31-bit size field)
- *
-*/
+ * First-fit allocator with implicit free list and coalescing
+ */
 #include <stdint.h>
 #include "../include/lib.h"
 
@@ -316,3 +309,29 @@ void k_heapLCABFree(KHEAPLCAB *heap, void *ptr) {
         }
     }
 }
+
+// Unified memory manager interface implementation
+void* mm_alloc(uint32_t size) {
+    return k_heapLCABAlloc(&kernel_heap, size);
+}
+
+void mm_free(void *ptr) {
+    k_heapLCABFree(&kernel_heap, ptr);
+}
+
+void mm_init(uintptr_t start, uint32_t size) {
+    k_heapLCABInit(&kernel_heap);
+    k_heapLCABAddBlock(&kernel_heap, start, size);
+}
+
+void mm_get_stats(uint64_t *total, uint64_t *free) {
+    if (kernel_heap.fblock) {
+        *total = kernel_heap.fblock->size;
+        *free = kernel_heap.fblock->size - kernel_heap.fblock->used;
+    } else {
+        *total = 0;
+        *free = 0;
+    }
+}
+
+#endif // FIRSTFIT

@@ -1,8 +1,8 @@
-/*
- * Buddy Memory Manager
- * Asigna bloques en potencias de 2 y fusiona/divide automáticamente
- */
+#ifdef BUDDY
 
+/*
+ * Buddy memory manager - power-of-2 page allocator with automatic splitting/coalescing
+ */
 #include <stdint.h>
 #include <stddef.h>
 #include "../include/lib.h"
@@ -242,3 +242,45 @@ uint64_t buddy_get_free_blocks(zone_t *zone, int order)
     return 0;
   return zone->free_area[order].nr_free;
 }
+
+// Unified memory manager interface implementation
+void* mm_alloc(uint32_t size) {
+    // Calculate pages needed (minimum 1 page = 4KB)
+    int order = 0;
+    uint32_t pages_needed = (size + 4095) / 4096;
+
+    while ((1UL << order) < pages_needed && order <= MAX_ORDER)
+        order++;
+
+    page_t *page = buddy_alloc_pages(&buddy_zone, order);
+    if (!page)
+        return NULL;
+
+    return (void*)(page->pfn * 4096);
+}
+
+void mm_free(void *ptr) {
+    if (!ptr)
+        return;
+
+    uint64_t pfn = ((uint64_t)ptr) / 4096;
+    page_t *page = &buddy_zone.pages[pfn - buddy_zone.start_pfn];
+    buddy_free_pages(&buddy_zone, page, page->order);
+}
+
+void mm_init(uintptr_t start, uint32_t size) {
+    uint64_t start_pfn = start / 4096;
+    uint64_t num_pages = size / 4096;
+
+    if (num_pages > 2048)
+        num_pages = 2048;
+
+    buddy_init(&buddy_zone, start_pfn, num_pages, buddy_pages);
+    buddy_add_memory(&buddy_zone, start_pfn, num_pages);
+}
+
+void mm_get_stats(uint64_t *total, uint64_t *free) {
+    buddy_get_stats(&buddy_zone, total, free);
+}
+
+#endif // BUDDY

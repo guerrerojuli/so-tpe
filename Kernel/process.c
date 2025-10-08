@@ -5,8 +5,6 @@
 #include "include/lib.h"
 #include <stddef.h>
 
-extern KHEAPLCAB kernel_heap;
-extern zone_t buddy_zone;
 extern void *_initialize_stack_frame(void *wrapper, void *code, void *stack_top, void *args);
 extern int32_t kill_current_process(int32_t retval);
 
@@ -34,7 +32,7 @@ static char **allocate_arguments(char **args) {
 
     // Allocate: pointers array + strings
     total_size += sizeof(char *) * (argc + 1);
-    char **new_args = (char **)k_heapLCABAlloc(&kernel_heap, total_size);
+    char **new_args = (char **)mm_alloc(total_size);
 
     // Copy strings into contiguous memory
     char *str_area = (char *)new_args + sizeof(char *) * (argc + 1);
@@ -58,12 +56,11 @@ void init_process(Process *process, uint16_t pid, uint16_t parent_pid,
     process->unkillable = unkillable;
     process->return_value = 0;
 
-    // Allocate stack from buddy (4KB = 1 page)
-    page_t *page = buddy_alloc_pages(&buddy_zone, 0);
-    process->stack_base = (void *)(page->pfn * 4096);
+    // Allocate stack (4KB)
+    process->stack_base = mm_alloc(4096);
 
     // Copy name
-    process->name = (char *)k_heapLCABAlloc(&kernel_heap, strlen(name) + 1);
+    process->name = (char *)mm_alloc(strlen(name) + 1);
     strcpy(process->name, name);
 
     // Copy arguments
@@ -80,15 +77,9 @@ void init_process(Process *process, uint16_t pid, uint16_t parent_pid,
 }
 
 void free_process(Process *process) {
-    // Free stack (buddy)
-    uint64_t pfn = ((uint64_t)process->stack_base) / 4096;
-    page_t *page = &buddy_zone.pages[pfn - buddy_zone.start_pfn];
-    buddy_free_pages(&buddy_zone, page, 0);
-
-    // Free name, argv, and process struct (first-fit)
+    mm_free(process->stack_base);
     if (process->name)
-        k_heapLCABFree(&kernel_heap, process->name);
+        mm_free(process->name);
     if (process->argv)
-        k_heapLCABFree(&kernel_heap, process->argv);
-    k_heapLCABFree(&kernel_heap, process);
+        mm_free(process->argv);
 }

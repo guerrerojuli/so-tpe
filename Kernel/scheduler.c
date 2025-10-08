@@ -17,7 +17,6 @@ typedef struct {
 
 static Scheduler scheduler;
 
-extern KHEAPLCAB kernel_heap;
 
 void scheduler_init() {
     for (int i = 0; i < MAX_PROCESSES; i++) {
@@ -56,7 +55,7 @@ int16_t create_process(MainFunction code, char **args, char *name,
         priority = NUM_PRIORITIES - 1;
 
     // Allocate PCB
-    Process *process = (Process *)k_heapLCABAlloc(&kernel_heap, sizeof(Process));
+    Process *process = (Process *)mm_alloc(sizeof(Process));
     init_process(process, scheduler.next_unused_pid, scheduler.current_pid,
                  code, args, name, priority, fds, unkillable);
 
@@ -66,7 +65,7 @@ int16_t create_process(MainFunction code, char **args, char *name,
         node = list_append(&scheduler.ready_queues[priority], process);
     } else {
         // IDLE is special - manual node, not in queue
-        node = (Node *)k_heapLCABAlloc(&kernel_heap, sizeof(Node));
+        node = (Node *)mm_alloc(sizeof(Node));
         node->data = process;
         node->prev = node->next = NULL;
     }
@@ -162,7 +161,7 @@ int32_t kill_process(uint16_t pid, int32_t retval) {
     scheduler.processes[pid] = NULL;
     scheduler.num_processes--;
     free_process(process);
-    k_heapLCABFree(&kernel_heap, node);
+    mm_free(node);
 
     if (pid == scheduler.current_pid) {
         yield();

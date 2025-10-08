@@ -3,6 +3,7 @@
 #include <consoleDriver.h>
 #include <keyboardDriver.h>
 #include <scheduler.h>
+#include <memoryManager.h>
 #include <lib.h>
 
 // I/O syscalls
@@ -93,4 +94,29 @@ uint64_t sys_block(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_t 
 {
     int8_t result = set_status((uint16_t)pid, BLOCKED);
     return (uint64_t)result;
+}
+
+// Memory management syscalls
+uint64_t sys_malloc(uint64_t size, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
+{
+    return (uint64_t)mm_alloc((uint32_t)size);
+}
+
+uint64_t sys_free(uint64_t ptr, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
+{
+    mm_free((void*)ptr);
+    return 0;
+}
+
+uint64_t sys_mem_state(uint64_t total_ptr, uint64_t free_ptr, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4)
+{
+    uint64_t total, free;
+    mm_get_stats(&total, &free);
+
+    if (total_ptr)
+        *((uint64_t*)total_ptr) = total;
+    if (free_ptr)
+        *((uint64_t*)free_ptr) = free;
+
+    return 0;
 }

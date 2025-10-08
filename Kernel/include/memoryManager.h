@@ -3,6 +3,13 @@
 
 #include <stdint.h>
 
+// Default to FIRSTFIT if neither is defined
+#if !defined(FIRSTFIT) && !defined(BUDDY)
+#define FIRSTFIT
+#endif
+
+#include "memoryManagerInterface.h"
+
 // Entry-Based Memory Manager structures
 typedef struct _KHEAPHDRLCAB
 {
@@ -77,5 +84,15 @@ page_t *buddy_alloc_pages(zone_t *zone, int order);
 void buddy_add_memory(zone_t *zone, uint64_t start_pfn, uint64_t nr_pages);
 void buddy_get_stats(zone_t *zone, uint64_t *total, uint64_t *free);
 uint64_t buddy_get_free_blocks(zone_t *zone, int order);
+
+// Conditional externs based on selected memory manager
+#ifdef FIRSTFIT
+extern KHEAPLCAB kernel_heap;
+#endif
+
+#ifdef BUDDY
+extern zone_t buddy_zone;
+extern page_t buddy_pages[];
+#endif
 
 #endif // MEMORY_MANAGER_H
