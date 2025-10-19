@@ -8,6 +8,7 @@
 #include <registers.h>
 #include <memoryManager.h>
 #include <scheduler.h>
+#include <semaphoreManager.h>
 #include <globals.h>
 
 extern uint8_t text;
@@ -83,6 +84,9 @@ int main()
 
 	// Initialize scheduler
 	scheduler_init();
+	
+	// Initialize semaphore manager
+	semaphore_manager_init();
 
 	// Create IDLE process (PID 0)
 	int16_t default_fds[3] = {STDIN, STDOUT, STDERR};

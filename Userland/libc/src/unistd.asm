@@ -7,6 +7,11 @@ GLOBAL sys_get_pid
 GLOBAL sys_yield
 GLOBAL sys_set_priority
 GLOBAL sys_block
+GLOBAL sys_sem_init
+GLOBAL sys_sem_open
+GLOBAL sys_sem_destroy
+GLOBAL sys_sem_wait
+GLOBAL sys_sem_post
 
 section .text
 
@@ -33,6 +38,11 @@ section .text
 ; SYSCALL_SET_PRIORITY = 6
 ; SYSCALL_CLEAR_TEXT_BUFFER = 7
 ; SYSCALL_BLOCK = 8
+; SYSCALL_SEM_INIT = 12
+; SYSCALL_SEM_OPEN = 13
+; SYSCALL_SEM_DESTROY = 14
+; SYSCALL_SEM_WAIT = 15
+; SYSCALL_SEM_POST = 16
 
 sys_read:
     syscall 0
@@ -60,4 +70,19 @@ sys_clear_text_buffer:
 
 sys_block:
     syscall 8
+
+sys_sem_init:
+    syscall 12
+
+sys_sem_open:
+    syscall 13
+
+sys_sem_destroy:
+    syscall 14
+
+sys_sem_wait:
+    syscall 15
+
+sys_sem_post:
+    syscall 16
 

@@ -4,6 +4,7 @@
 #include <keyboardDriver.h>
 #include <scheduler.h>
 #include <memoryManager.h>
+#include <semaphoreManager.h>
 #include <lib.h>
 
 // I/O syscalls
@@ -119,4 +120,40 @@ uint64_t sys_mem_state(uint64_t total_ptr, uint64_t free_ptr, uint64_t _unused1,
         *((uint64_t*)free_ptr) = free;
 
     return 0;
+}
+
+// Semaphore syscalls
+uint64_t sys_sem_init(uint64_t sem_id, uint64_t initial_value, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4)
+{
+    sem_t id = (sem_t)sem_id;
+    int8_t result = sem_init(&id, (uint32_t)initial_value);
+    return (uint64_t)result;
+}
+
+uint64_t sys_sem_open(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
+{
+    sem_t id = (sem_t)sem_id;
+    int8_t result = sem_open(&id);
+    return (uint64_t)result;
+}
+
+uint64_t sys_sem_destroy(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
+{
+    sem_t id = (sem_t)sem_id;
+    int8_t result = sem_destroy(&id);
+    return (uint64_t)result;
+}
+
+uint64_t sys_sem_wait(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
+{
+    sem_t id = (sem_t)sem_id;
+    int8_t result = sem_wait(&id);
+    return (uint64_t)result;
+}
+
+uint64_t sys_sem_post(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
+{
+    sem_t id = (sem_t)sem_id;
+    int8_t result = sem_post(&id);
+    return (uint64_t)result;
 }

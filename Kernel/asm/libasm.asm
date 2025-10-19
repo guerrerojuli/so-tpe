@@ -1,5 +1,6 @@
 GLOBAL inb
 GLOBAL outb
+GLOBAL _xchg
 
 section .text
 	
@@ -16,3 +17,9 @@ outb:
     mov al, sil   ; valor 
     out dx, al    ; enviar AL al puerto DX
     ret
+
+; int _xchg (void *ptr, int value)
+_xchg:
+  mov rax, rsi
+  xchg [rdi], eax
+  ret

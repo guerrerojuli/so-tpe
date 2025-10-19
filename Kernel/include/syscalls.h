@@ -17,6 +17,11 @@
 #define SYSCALL_MALLOC 9
 #define SYSCALL_FREE 10
 #define SYSCALL_MEM_STATE 11
+#define SYSCALL_SEM_INIT 12
+#define SYSCALL_SEM_OPEN 13
+#define SYSCALL_SEM_DESTROY 14
+#define SYSCALL_SEM_WAIT 15
+#define SYSCALL_SEM_POST 16
 
 // I/O syscalls
 uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3);
@@ -35,5 +40,12 @@ uint64_t sys_block(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_t 
 uint64_t sys_malloc(uint64_t size, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
 uint64_t sys_free(uint64_t ptr, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
 uint64_t sys_mem_state(uint64_t total_ptr, uint64_t free_ptr, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4);
+
+// Semaphore syscalls
+uint64_t sys_sem_init(uint64_t sem_id, uint64_t initial_value, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4);
+uint64_t sys_sem_open(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
+uint64_t sys_sem_destroy(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
+uint64_t sys_sem_wait(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
+uint64_t sys_sem_post(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
 
 #endif
