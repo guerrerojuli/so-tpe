@@ -2,6 +2,7 @@
 #define LINKED_LIST_ADT_H
 
 #include "list.h"
+#include "memoryManager.h"
 
 // Alias for convenience - LinkedListADT is a pointer to List
 typedef List* LinkedListADT;
