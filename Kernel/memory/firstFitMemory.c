@@ -61,6 +61,9 @@ typedef struct _KHEAPLCAB {
     uint32_t bcnt;            // Block count
 } KHEAPLCAB;
 
+// Global kernel heap instance
+static KHEAPLCAB kernel_heap;
+
 /*
  * k_heapLCABInit - Initialize the heap manager
  *

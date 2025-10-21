@@ -8,6 +8,7 @@
 #define MAX_PROCESSES 20
 #define IDLE_PID 0
 #define NUM_PRIORITIES 5
+#define AGING_THRESHOLD 100  // Process must consume full quantum this many times before aging
 
 // Scheduler API
 void scheduler_init();

@@ -12,11 +12,52 @@ typedef struct {
     uint16_t current_pid;
     uint16_t next_unused_pid;
     uint16_t num_processes;
-    int8_t remaining_quantum;
+    int16_t remaining_quantum;  // Changed to int16_t to support larger quantum values
+    int16_t initial_quantum;     // Quantum assigned at start of time slice
 } Scheduler;
 
 static Scheduler scheduler;
 
+// Calculate base quantum for a given priority
+// Priority 4 -> 4, Priority 3 -> 8, Priority 2 -> 16, Priority 1 -> 32, Priority 0 -> 64
+static int16_t calculate_base_quantum(uint8_t priority) {
+    return 4 * (1 << (NUM_PRIORITIES - 1 - priority));
+}
+
+// Calculate adjusted quantum based on I/O bound behavior
+static int16_t calculate_adjusted_quantum(Process *process) {
+    int16_t base_quantum = calculate_base_quantum(process->priority);
+
+    if (process->is_io_bound && process->quantum_usage_percent > 0) {
+        // For I/O bound processes, increase quantum inversely to usage
+        // If process uses 25% of quantum, multiply by 4 (100/25)
+        int16_t adjusted = (base_quantum * 100) / process->quantum_usage_percent;
+
+        // Cap at 4x the base quantum to prevent excessive values
+        if (adjusted > base_quantum * 4) {
+            adjusted = base_quantum * 4;
+        }
+
+        return adjusted;
+    }
+
+    return base_quantum;
+}
+
+// Update I/O bound status based on quantum usage
+static void update_io_bound_status(Process *process, uint8_t quantum_used, int16_t total_quantum) {
+    if (total_quantum > 0) {
+        uint8_t usage_percent = (quantum_used * 100) / total_quantum;
+
+        // Update rolling average (weighted: 75% old, 25% new)
+        process->quantum_usage_percent = (process->quantum_usage_percent * 3 + usage_percent) / 4;
+
+        // Mark as I/O bound if consistently uses less than 50% of quantum
+        process->is_io_bound = (process->quantum_usage_percent < 50);
+
+        process->last_quantum_used = quantum_used;
+    }
+}
 
 void scheduler_init() {
     for (int i = 0; i < MAX_PROCESSES; i++) {
@@ -121,6 +162,15 @@ int8_t set_status(uint16_t pid, ProcessStatus new_status) {
     process->status = new_status;
 
     if (new_status == BLOCKED) {
+        // Calculate quantum usage when blocking
+        if (pid == scheduler.current_pid && scheduler.initial_quantum > 0) {
+            int16_t quantum_used = scheduler.initial_quantum - scheduler.remaining_quantum;
+            update_io_bound_status(process, quantum_used, scheduler.initial_quantum);
+        }
+
+        // Reset quantum consumption counter when blocking (I/O activity)
+        process->quantum_consumed_count = 0;
+
         // Move to blocked queue
         list_remove(&scheduler.ready_queues[process->priority], node);
         node = list_append(&scheduler.blocked_queue, process);
@@ -179,6 +229,16 @@ uint16_t get_pid() {
 }
 
 void yield() {
+    // Track quantum usage when process voluntarily yields
+    if (scheduler.processes[scheduler.current_pid] != NULL && scheduler.initial_quantum > 0) {
+        Process *current_process = (Process *)scheduler.processes[scheduler.current_pid]->data;
+        int16_t quantum_used = scheduler.initial_quantum - scheduler.remaining_quantum;
+        update_io_bound_status(current_process, quantum_used, scheduler.initial_quantum);
+
+        // Reset quantum consumption counter on voluntary yield (indicates I/O activity)
+        current_process->quantum_consumed_count = 0;
+    }
+
     scheduler.remaining_quantum = 0;
     __asm__ volatile("int $0x20");  // Force timer interrupt
 }
@@ -204,21 +264,34 @@ void *schedule(void *current_rsp) {
 
         if (current_process->status == RUNNING) {
             current_process->status = READY;
-        }
 
-        // Priority aging (TP2_SO style)
-        uint8_t new_priority = current_process->priority > 0 ?
-                               current_process->priority - 1 :
-                               current_process->priority;
-        set_priority(scheduler.current_pid, new_priority);
+            // Process consumed entire quantum
+            if (scheduler.remaining_quantum == 0 && scheduler.initial_quantum > 0) {
+                // Update I/O bound status (used 100% of quantum)
+                update_io_bound_status(current_process, scheduler.initial_quantum, scheduler.initial_quantum);
+
+                // Increment quantum consumption counter
+                current_process->quantum_consumed_count++;
+
+                // Delayed priority aging - only age if threshold is reached
+                if (current_process->quantum_consumed_count >= AGING_THRESHOLD && current_process->priority > 0) {
+                    uint8_t new_priority = current_process->priority - 1;
+                    set_priority(scheduler.current_pid, new_priority);
+
+                    // Reset counter after aging
+                    current_process->quantum_consumed_count = 0;
+                }
+            }
+        }
     }
 
     // Pick next process
     scheduler.current_pid = get_next_pid();
     Process *next_process = (Process *)scheduler.processes[scheduler.current_pid]->data;
 
-    // Set quantum based on priority
-    scheduler.remaining_quantum = (NUM_PRIORITIES - 1 - next_process->priority) + 1;
+    // Set quantum with dynamic adjustment for I/O bound processes
+    scheduler.initial_quantum = calculate_adjusted_quantum(next_process);
+    scheduler.remaining_quantum = scheduler.initial_quantum;
 
     next_process->status = RUNNING;
     return next_process->stack_pos;

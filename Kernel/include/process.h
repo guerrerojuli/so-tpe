@@ -19,6 +19,12 @@ typedef struct Process {
     int16_t file_descriptors[3];  // stdin, stdout, stderr
     int32_t return_value;
     uint8_t unkillable;        // For IDLE and critical processes
+
+    // Quantum tracking for advanced scheduling
+    uint16_t quantum_consumed_count;  // Consecutive times full quantum was used
+    uint8_t last_quantum_used;        // Ticks used in last quantum
+    uint8_t quantum_usage_percent;    // Average % of quantum used (for I/O bound detection)
+    uint8_t is_io_bound;              // Flag for I/O bound processes
 } Process;
 
 // Process management

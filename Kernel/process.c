@@ -56,6 +56,12 @@ void init_process(Process *process, uint16_t pid, uint16_t parent_pid,
     process->unkillable = unkillable;
     process->return_value = 0;
 
+    // Initialize quantum tracking fields
+    process->quantum_consumed_count = 0;
+    process->last_quantum_used = 0;
+    process->quantum_usage_percent = 100;  // Assume CPU-bound initially
+    process->is_io_bound = 0;              // Not I/O bound initially
+
     // Allocate stack (4KB)
     process->stack_base = mm_alloc(4096);
 
@@ -66,7 +72,7 @@ void init_process(Process *process, uint16_t pid, uint16_t parent_pid,
     // Copy arguments
     process->argv = allocate_arguments(args);
 
-    // Setup initial stack frame (will be completed in Phase 4)
+    // Setup initial stack frame
     void *stack_top = (void *)((uint64_t)process->stack_base + PROCESS_STACK_SIZE);
     process->stack_pos = _initialize_stack_frame(process_wrapper, code, stack_top, process->argv);
 
