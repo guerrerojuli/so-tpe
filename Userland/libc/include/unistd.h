@@ -20,6 +20,7 @@ int64_t sys_waitpid(uint64_t pid);
 // Semaphore syscalls
 int64_t sys_sem_init(uint64_t sem_id, uint64_t initial_value);
 int64_t sys_sem_open(uint64_t sem_id);
+int64_t sys_sem_close(uint64_t sem_id);
 int64_t sys_sem_destroy(uint64_t sem_id);
 int64_t sys_sem_wait(uint64_t sem_id);
 int64_t sys_sem_post(uint64_t sem_id);

@@ -33,8 +33,8 @@ uint64_t my_process_inc(uint64_t argc, char *argv[]) {
     return -1;
 
   if (use_sem)
-    if (!sys_sem_init(SEM_ID, 1)) {
-      puts("test_sync: ERROR opening semaphore");
+    if (sys_sem_open(SEM_ID) < 0) {
+      puts("test_sync: ERROR opening semaphore\n");
       return -1;
     }
 
@@ -48,7 +48,7 @@ uint64_t my_process_inc(uint64_t argc, char *argv[]) {
   }
 
   if (use_sem)
-    sys_sem_destroy(SEM_ID);
+    sys_sem_close(SEM_ID);
 
   return 0;
 }
@@ -58,6 +58,15 @@ uint64_t test_sync(uint64_t argc, char *argv[]) { //{n, use_sem, 0}
 
   if (argc != 2)
     return -1;
+
+  // added for compatibility with our implementation
+	int8_t useSem = atoi(argv[1]);
+	if (useSem) {
+		if (sys_sem_init(SEM_ID, 1) < 0) {
+			puts("test_sync: ERROR creating semaphore\n");
+			return -1;
+		}
+	}
 
   char *argvDec[] = {argv[0], "-1", argv[1], NULL};
   char *argvInc[] = {argv[0], "1", argv[1], NULL};
@@ -75,6 +84,11 @@ uint64_t test_sync(uint64_t argc, char *argv[]) { //{n, use_sem, 0}
   for (i = 0; i < TOTAL_PAIR_PROCESSES; i++) {
     sys_waitpid(pids[i]);
     sys_waitpid(pids[i + TOTAL_PAIR_PROCESSES]);
+  }
+
+  // Parent destroys the semaphore after all children finish
+  if (useSem) {
+    sys_sem_destroy(SEM_ID);
   }
 
   char buf[32];

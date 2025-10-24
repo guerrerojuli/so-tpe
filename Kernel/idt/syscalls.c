@@ -137,6 +137,13 @@ uint64_t sys_sem_open(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uin
     return (uint64_t)result;
 }
 
+uint64_t sys_sem_close(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
+{
+    sem_t id = (sem_t)sem_id;
+    int8_t result = sem_close(&id);
+    return (uint64_t)result;
+}
+
 uint64_t sys_sem_destroy(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
 {
     sem_t id = (sem_t)sem_id;

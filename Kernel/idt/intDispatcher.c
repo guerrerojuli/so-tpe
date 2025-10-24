@@ -19,6 +19,7 @@ static uint64_t (*intHandlers[])(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint6
     [SYSCALL_MEM_STATE] = sys_mem_state,
     [SYSCALL_SEM_INIT] = sys_sem_init,
     [SYSCALL_SEM_OPEN] = sys_sem_open,
+    [SYSCALL_SEM_CLOSE] = sys_sem_close,
     [SYSCALL_SEM_DESTROY] = sys_sem_destroy,
     [SYSCALL_SEM_WAIT] = sys_sem_wait,
     [SYSCALL_SEM_POST] = sys_sem_post,

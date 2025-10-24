@@ -69,6 +69,19 @@ int8_t sem_open(sem_t *sem) {
 	return (semManager->semaphores[id] == NULL) ? -1 : 0;
 }
 
+int8_t sem_close(sem_t *sem) {
+	if (sem == NULL)
+		return -1;
+	
+	SemaphoreManagerADT semManager = getSemaphoreManager();
+	uint16_t id = *sem;
+	
+	if (id >= MAX_SEMAPHORES || semManager->semaphores[id] == NULL)
+		return -1;
+	
+	return 0;
+}
+
 int8_t sem_destroy(sem_t *sem) {
 	if (sem == NULL)
 		return -1;
