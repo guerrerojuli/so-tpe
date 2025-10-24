@@ -25,12 +25,21 @@ uint64_t my_process_inc(uint64_t argc, char *argv[]) {
   if (argc != 3)
     return -1;
 
-  if ((n = atoi(argv[0])) <= 0)
+  if ((n = satoi(argv[0])) <= 0)
     return -1;
-  if ((inc = atoi(argv[1])) == 0)
+  if ((inc = satoi(argv[1])) == 0)
     return -1;
-  if ((use_sem = atoi(argv[2])) < 0)
+  if ((use_sem = satoi(argv[2])) < 0)
     return -1;
+
+  // Debug: print process start
+  char buf[32];
+  uint64_t pid = sys_get_pid();
+  puts("Process ");
+  puts(itoa((int)pid, buf));
+  puts(" starting with inc=");
+  puts(itoa((int)inc, buf));
+  puts("\n");
 
   if (use_sem)
     if (sys_sem_open(SEM_ID) < 0) {
@@ -50,6 +59,11 @@ uint64_t my_process_inc(uint64_t argc, char *argv[]) {
   if (use_sem)
     sys_sem_close(SEM_ID);
 
+  // Debug: print process end
+  puts("Process ");
+  puts(itoa((int)pid, buf));
+  puts(" finished\n");
+
   return 0;
 }
 
@@ -60,7 +74,7 @@ uint64_t test_sync(uint64_t argc, char *argv[]) { //{n, use_sem, 0}
     return -1;
 
   // added for compatibility with our implementation
-	int8_t useSem = atoi(argv[1]);
+	int8_t useSem = satoi(argv[1]);
 	if (useSem) {
 		if (sys_sem_init(SEM_ID, 1) < 0) {
 			puts("test_sync: ERROR creating semaphore\n");
