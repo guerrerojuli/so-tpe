@@ -106,6 +106,19 @@ void keyboard_handler(const registers_t *registers)
         key_states[scancode] = is_release ? 0 : 1;
     }
 
+    // Handle shift keys for both press and release
+    if (IS_SHIFT_PRESS(scancode) && !is_release)
+    {
+        kbd_state.shift_pressed = 1;
+        return;
+    }
+
+    if (IS_SHIFT_RELEASE(raw_scancode))
+    {
+        kbd_state.shift_pressed = 0;
+        return;
+    }
+
     // Handle remaining keys only on key press
     if (!is_release)
     {
@@ -126,19 +139,6 @@ void keyboard_handler(const registers_t *registers)
                 insert_char(ascii_code);
             }
         }
-    }
-
-    // Handle shift keys for both press and release
-    if (IS_SHIFT_PRESS(scancode))
-    {
-        kbd_state.shift_pressed = 1;
-        return;
-    }
-
-    if (IS_SHIFT_RELEASE(raw_scancode))
-    {
-        kbd_state.shift_pressed = 0;
-        return;
     }
 
     // All other scancodes are implicitly ignored (no else needed)
