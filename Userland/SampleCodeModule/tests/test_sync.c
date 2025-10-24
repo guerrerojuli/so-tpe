@@ -1,7 +1,8 @@
 #include "stdint.h"
+#include "stddef.h"
 #include "stdio.h"
 #include "stdlib.h"
-#include "syscall.h"
+#include "unistd.h"
 #include "test_util.h"
 
 #define SEM_ID 67
@@ -63,9 +64,10 @@ uint64_t test_sync(uint64_t argc, char *argv[]) { //{n, use_sem, 0}
 
   global = 0;
 
+  int16_t default_fds[3] = {STDIN, STDOUT, STDERR};
+  
   uint64_t i;
   for (i = 0; i < TOTAL_PAIR_PROCESSES; i++) {
-    int16_t default_fds[3] = {STDIN, STDOUT, STDERR};
     pids[i] = sys_create_process(&my_process_inc, argvDec, "my_process_inc", 0, (uint64_t)default_fds);
     pids[i + TOTAL_PAIR_PROCESSES] = sys_create_process(&my_process_inc, argvInc, "my_process_inc", 0, (uint64_t)default_fds);
   }
