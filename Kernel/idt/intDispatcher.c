@@ -22,6 +22,7 @@ static uint64_t (*intHandlers[])(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint6
     [SYSCALL_SEM_DESTROY] = sys_sem_destroy,
     [SYSCALL_SEM_WAIT] = sys_sem_wait,
     [SYSCALL_SEM_POST] = sys_sem_post,
+    [SYSCALL_WAITPID] = sys_waitpid,
 };
 
 uint64_t intDispatcher(const registers_t *registers)

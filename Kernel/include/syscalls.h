@@ -22,6 +22,7 @@
 #define SYSCALL_SEM_DESTROY 14
 #define SYSCALL_SEM_WAIT 15
 #define SYSCALL_SEM_POST 16
+#define SYSCALL_WAITPID 17
 
 // I/O syscalls
 uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3);
@@ -35,6 +36,7 @@ uint64_t sys_get_pid(uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, ui
 uint64_t sys_yield(uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5, uint64_t _unused6);
 uint64_t sys_set_priority(uint64_t pid, uint64_t new_priority, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4);
 uint64_t sys_block(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
+uint64_t sys_waitpid(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
 
 // Memory management syscalls
 uint64_t sys_malloc(uint64_t size, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);

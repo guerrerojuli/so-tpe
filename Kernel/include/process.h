@@ -25,6 +25,9 @@ typedef struct Process {
     uint8_t last_quantum_used;        // Ticks used in last quantum
     uint8_t quantum_usage_percent;    // Average % of quantum used (for I/O bound detection)
     uint8_t is_io_bound;              // Flag for I/O bound processes
+    
+    // Wait support
+    uint16_t waiting_for_pid;         // PID this process is waiting for (0 if not waiting)
 } Process;
 
 // Process management

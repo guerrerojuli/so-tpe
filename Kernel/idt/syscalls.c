@@ -157,3 +157,9 @@ uint64_t sys_sem_post(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uin
     int8_t result = sem_post(&id);
     return (uint64_t)result;
 }
+
+uint64_t sys_waitpid(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
+{
+    int32_t result = waitpid((uint16_t)pid);
+    return (uint64_t)result;
+}

@@ -207,12 +207,18 @@ int32_t kill_process(uint16_t pid, int32_t retval) {
     process->status = ZOMBIE;
     process->return_value = retval;
 
-    // Cleanup immediately (simplified - no parent waiting)
-    scheduler.processes[pid] = NULL;
-    scheduler.num_processes--;
-    free_process(process);
-    mm_free(node);
+    // Check if parent is waiting for this process
+    uint16_t parent_pid = process->parent_pid;
+    if (parent_pid < MAX_PROCESSES && scheduler.processes[parent_pid] != NULL) {
+        Process *parent = (Process *)scheduler.processes[parent_pid]->data;
+        
+        // If parent is waiting for this specific child, unblock it
+        if (parent->waiting_for_pid == pid && parent->status == BLOCKED) {
+            set_status(parent_pid, READY);
+        }
+    }
 
+    // If current process is dying, force context switch
     if (pid == scheduler.current_pid) {
         yield();
     }
@@ -295,4 +301,41 @@ void *schedule(void *current_rsp) {
 
     next_process->status = RUNNING;
     return next_process->stack_pos;
+}
+
+int32_t waitpid(uint16_t pid) {
+    // Check if child process exists
+    if (pid >= MAX_PROCESSES || scheduler.processes[pid] == NULL)
+        return -1;
+    
+    Node *child_node = scheduler.processes[pid];
+    Process *child_process = (Process *)child_node->data;
+    
+    // Check if calling process is the parent
+    if (child_process->parent_pid != scheduler.current_pid)
+        return -1;
+    
+    // Get parent process
+    Process *parent = (Process *)scheduler.processes[scheduler.current_pid]->data;
+    parent->waiting_for_pid = pid;
+    
+    // If child hasn't terminated yet, block parent until it does
+    if (child_process->status != ZOMBIE) {
+        set_status(parent->pid, BLOCKED);
+        yield();
+    }
+    
+    // Child is zombie, collect return value
+    int32_t retval = child_process->return_value;
+    
+    // Clean up zombie process
+    scheduler.processes[pid] = NULL;
+    scheduler.num_processes--;
+    free_process(child_process);
+    mm_free(child_node);
+    
+    // Clear waiting state
+    parent->waiting_for_pid = 0;
+    
+    return retval;
 }

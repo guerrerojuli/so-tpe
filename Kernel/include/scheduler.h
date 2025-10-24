@@ -21,5 +21,6 @@ void yield();
 int8_t set_priority(uint16_t pid, uint8_t new_priority);
 int8_t set_status(uint16_t pid, ProcessStatus new_status);
 void *schedule(void *current_rsp);  // Called from timer interrupt
+int32_t waitpid(uint16_t pid);  // Wait for child process to terminate
 
 #endif

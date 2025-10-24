@@ -12,6 +12,7 @@ GLOBAL sys_sem_open
 GLOBAL sys_sem_destroy
 GLOBAL sys_sem_wait
 GLOBAL sys_sem_post
+GLOBAL sys_waitpid
 
 section .text
 
@@ -43,6 +44,7 @@ section .text
 ; SYSCALL_SEM_DESTROY = 14
 ; SYSCALL_SEM_WAIT = 15
 ; SYSCALL_SEM_POST = 16
+; SYSCALL_WAITPID = 17
 
 sys_read:
     syscall 0
@@ -85,4 +87,7 @@ sys_sem_wait:
 
 sys_sem_post:
     syscall 16
+
+sys_waitpid:
+    syscall 17
 

@@ -61,6 +61,9 @@ void init_process(Process *process, uint16_t pid, uint16_t parent_pid,
     process->last_quantum_used = 0;
     process->quantum_usage_percent = 100;  // Assume CPU-bound initially
     process->is_io_bound = 0;              // Not I/O bound initially
+    
+    // Initialize wait fields
+    process->waiting_for_pid = 0;
 
     // Allocate stack (4KB)
     process->stack_base = mm_alloc(4096);

@@ -15,6 +15,7 @@ uint64_t sys_get_pid(void);
 uint64_t sys_yield(void);
 uint64_t sys_set_priority(uint64_t pid, uint64_t new_priority);
 uint64_t sys_block(uint64_t pid);
+int64_t sys_waitpid(uint64_t pid);
 
 // Semaphore syscalls
 int64_t sys_sem_init(uint64_t sem_id, uint64_t initial_value);
