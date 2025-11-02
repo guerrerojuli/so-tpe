@@ -395,3 +395,43 @@ int32_t waitpid(uint16_t pid)
 
     return retval;
 }
+
+int32_t get_process_info(ProcessInfo *info_array, uint32_t max_count)
+{
+    if (!info_array || max_count == 0)
+        return -1;
+
+    uint32_t count = 0;
+    for (int i = 0; i < MAX_PROCESSES && count < max_count; i++)
+    {
+        if (scheduler.processes[i] != NULL)
+        {
+            Process *process = (Process *)scheduler.processes[i]->data;
+
+            // Fill process info
+            info_array[count].pid = process->pid;
+            info_array[count].parent_pid = process->parent_pid;
+
+            // Copy process name safely
+            int j;
+            for (j = 0; j < 63 && process->name[j] != '\0'; j++)
+            {
+                info_array[count].name[j] = process->name[j];
+            }
+            info_array[count].name[j] = '\0';
+
+            info_array[count].priority = process->priority;
+            info_array[count].status = process->status;
+            info_array[count].stack_base = process->stack_base;
+            info_array[count].stack_pos = process->stack_pos;
+
+            // Determine if foreground: current running process or shell
+            // For simplicity, mark running process as foreground
+            info_array[count].is_foreground = (process->status == RUNNING) ? 1 : 0;
+
+            count++;
+        }
+    }
+
+    return count;
+}

@@ -19,6 +19,7 @@ extern command man_cmd;
 extern command divzero_cmd;
 extern command invop_cmd;
 extern command test_sync_cmd;
+extern command ps_cmd;
 
 // Array de todos los comandos
 command *all_commands[] = {
@@ -29,6 +30,7 @@ command *all_commands[] = {
     &divzero_cmd,
     &invop_cmd,
     &test_sync_cmd,
+    &ps_cmd,
     NULL // Terminator
 };
 

@@ -3,6 +3,26 @@
 
 #include <stdint.h>
 
+// Process states
+typedef enum {
+    READY = 0,
+    RUNNING,
+    BLOCKED,
+    ZOMBIE
+} ProcessStatus;
+
+// Process info structure for ps command
+typedef struct {
+    uint16_t pid;
+    uint16_t parent_pid;
+    char name[64];
+    uint8_t priority;
+    ProcessStatus status;
+    void *stack_base;
+    void *stack_pos;
+    uint8_t is_foreground;
+} ProcessInfo;
+
 // I/O syscalls
 uint64_t sys_read(uint64_t fd, char *buf, uint64_t count);
 uint64_t sys_write(uint64_t fd, const char *buf, uint64_t count);
@@ -24,5 +44,8 @@ int64_t sys_sem_close(uint64_t sem_id);
 int64_t sys_sem_destroy(uint64_t sem_id);
 int64_t sys_sem_wait(uint64_t sem_id);
 int64_t sys_sem_post(uint64_t sem_id);
+
+// Process info syscalls
+int64_t sys_get_process_info(ProcessInfo *info_array, uint64_t max_count);
 
 #endif

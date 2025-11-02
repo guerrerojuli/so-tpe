@@ -170,3 +170,10 @@ uint64_t sys_waitpid(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_
     int32_t result = waitpid((uint16_t)pid);
     return (uint64_t)result;
 }
+
+uint64_t sys_get_process_info(uint64_t info_array_ptr, uint64_t max_count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4)
+{
+    ProcessInfo *info_array = (ProcessInfo *)info_array_ptr;
+    int32_t result = get_process_info(info_array, (uint32_t)max_count);
+    return (uint64_t)result;
+}

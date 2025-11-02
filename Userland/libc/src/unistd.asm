@@ -14,6 +14,7 @@ GLOBAL sys_sem_destroy
 GLOBAL sys_sem_wait
 GLOBAL sys_sem_post
 GLOBAL sys_waitpid
+GLOBAL sys_get_process_info
 
 section .text
 
@@ -47,6 +48,7 @@ section .text
 ; SYSCALL_SEM_WAIT = 16
 ; SYSCALL_SEM_POST = 17
 ; SYSCALL_WAITPID = 18
+; SYSCALL_GET_PROCESS_INFO = 19
 
 sys_read:
     syscall 0
@@ -95,4 +97,7 @@ sys_sem_post:
 
 sys_waitpid:
     syscall 18
+
+sys_get_process_info:
+    syscall 19
 
