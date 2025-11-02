@@ -5,36 +5,41 @@
 #include "include/list.h"
 #include "include/memoryManager.h"
 
-typedef struct {
-    Node *processes[MAX_PROCESSES];  // Fast PID lookup
-    List ready_queues[NUM_PRIORITIES];  // Priority queues
+typedef struct
+{
+    Node *processes[MAX_PROCESSES];    // Fast PID lookup
+    List ready_queues[NUM_PRIORITIES]; // Priority queues
     List blocked_queue;
     uint16_t current_pid;
     uint16_t next_unused_pid;
     uint16_t num_processes;
-    int16_t remaining_quantum;  // Changed to int16_t to support larger quantum values
-    int16_t initial_quantum;     // Quantum assigned at start of time slice
+    int16_t remaining_quantum; // Changed to int16_t to support larger quantum values
+    int16_t initial_quantum;   // Quantum assigned at start of time slice
 } Scheduler;
 
 static Scheduler scheduler;
 
 // Calculate base quantum for a given priority
 // Priority 4 -> 4, Priority 3 -> 8, Priority 2 -> 16, Priority 1 -> 32, Priority 0 -> 64
-static int16_t calculate_base_quantum(uint8_t priority) {
+static int16_t calculate_base_quantum(uint8_t priority)
+{
     return 4 * (1 << (NUM_PRIORITIES - 1 - priority));
 }
 
 // Calculate adjusted quantum based on I/O bound behavior
-static int16_t calculate_adjusted_quantum(Process *process) {
+static int16_t calculate_adjusted_quantum(Process *process)
+{
     int16_t base_quantum = calculate_base_quantum(process->priority);
 
-    if (process->is_io_bound && process->quantum_usage_percent > 0) {
+    if (process->is_io_bound && process->quantum_usage_percent > 0)
+    {
         // For I/O bound processes, increase quantum inversely to usage
         // If process uses 25% of quantum, multiply by 4 (100/25)
         int16_t adjusted = (base_quantum * 100) / process->quantum_usage_percent;
 
         // Cap at 4x the base quantum to prevent excessive values
-        if (adjusted > base_quantum * 4) {
+        if (adjusted > base_quantum * 4)
+        {
             adjusted = base_quantum * 4;
         }
 
@@ -45,8 +50,10 @@ static int16_t calculate_adjusted_quantum(Process *process) {
 }
 
 // Update I/O bound status based on quantum usage
-static void update_io_bound_status(Process *process, uint8_t quantum_used, int16_t total_quantum) {
-    if (total_quantum > 0) {
+static void update_io_bound_status(Process *process, uint8_t quantum_used, int16_t total_quantum)
+{
+    if (total_quantum > 0)
+    {
         uint8_t usage_percent = (quantum_used * 100) / total_quantum;
 
         // Update rolling average (weighted: 75% old, 25% new)
@@ -59,12 +66,15 @@ static void update_io_bound_status(Process *process, uint8_t quantum_used, int16
     }
 }
 
-void scheduler_init() {
-    for (int i = 0; i < MAX_PROCESSES; i++) {
+void scheduler_init()
+{
+    for (int i = 0; i < MAX_PROCESSES; i++)
+    {
         scheduler.processes[i] = NULL;
     }
 
-    for (int i = 0; i < NUM_PRIORITIES; i++) {
+    for (int i = 0; i < NUM_PRIORITIES; i++)
+    {
         list_init(&scheduler.ready_queues[i]);
     }
 
@@ -76,9 +86,12 @@ void scheduler_init() {
 }
 
 // Find highest priority ready process
-static uint16_t get_next_pid() {
-    for (int lvl = NUM_PRIORITIES - 1; lvl >= 0; lvl--) {
-        if (!list_is_empty(&scheduler.ready_queues[lvl])) {
+static uint16_t get_next_pid()
+{
+    for (int lvl = NUM_PRIORITIES - 1; lvl >= 0; lvl--)
+    {
+        if (!list_is_empty(&scheduler.ready_queues[lvl]))
+        {
             Node *node = list_get_first(&scheduler.ready_queues[lvl]);
             Process *process = (Process *)node->data;
             return process->pid;
@@ -88,7 +101,8 @@ static uint16_t get_next_pid() {
 }
 
 int16_t create_process(MainFunction code, char **args, char *name,
-                       uint8_t priority, int16_t fds[3], uint8_t unkillable) {
+                       uint8_t priority, int16_t fds[3], uint8_t unkillable)
+{
     if (scheduler.num_processes >= MAX_PROCESSES)
         return -1;
 
@@ -102,9 +116,12 @@ int16_t create_process(MainFunction code, char **args, char *name,
 
     // Add to scheduler
     Node *node;
-    if (process->pid != IDLE_PID) {
+    if (process->pid != IDLE_PID)
+    {
         node = list_append(&scheduler.ready_queues[priority], process);
-    } else {
+    }
+    else
+    {
         // IDLE is special - manual node, not in queue
         node = (Node *)mm_alloc(sizeof(Node));
         node->data = process;
@@ -114,7 +131,8 @@ int16_t create_process(MainFunction code, char **args, char *name,
     scheduler.processes[process->pid] = node;
 
     // Find next unused PID
-    while (scheduler.processes[scheduler.next_unused_pid] != NULL) {
+    while (scheduler.processes[scheduler.next_unused_pid] != NULL)
+    {
         scheduler.next_unused_pid = (scheduler.next_unused_pid + 1) % MAX_PROCESSES;
     }
 
@@ -122,7 +140,8 @@ int16_t create_process(MainFunction code, char **args, char *name,
     return process->pid;
 }
 
-int8_t set_priority(uint16_t pid, uint8_t new_priority) {
+int8_t set_priority(uint16_t pid, uint8_t new_priority)
+{
     if (pid >= MAX_PROCESSES || scheduler.processes[pid] == NULL || pid == IDLE_PID)
         return -1;
 
@@ -132,7 +151,8 @@ int8_t set_priority(uint16_t pid, uint8_t new_priority) {
     Node *node = scheduler.processes[pid];
     Process *process = (Process *)node->data;
 
-    if (process->status == READY || process->status == RUNNING) {
+    if (process->status == READY || process->status == RUNNING)
+    {
         // Remove from old queue
         list_remove(&scheduler.ready_queues[process->priority], node);
 
@@ -145,7 +165,8 @@ int8_t set_priority(uint16_t pid, uint8_t new_priority) {
     return new_priority;
 }
 
-int8_t set_status(uint16_t pid, ProcessStatus new_status) {
+int8_t set_status(uint16_t pid, ProcessStatus new_status)
+{
     if (pid >= MAX_PROCESSES || scheduler.processes[pid] == NULL || pid == IDLE_PID)
         return -1;
 
@@ -161,9 +182,11 @@ int8_t set_status(uint16_t pid, ProcessStatus new_status) {
 
     process->status = new_status;
 
-    if (new_status == BLOCKED) {
+    if (new_status == BLOCKED)
+    {
         // Calculate quantum usage when blocking
-        if (pid == scheduler.current_pid && scheduler.initial_quantum > 0) {
+        if (pid == scheduler.current_pid && scheduler.initial_quantum > 0)
+        {
             int16_t quantum_used = scheduler.initial_quantum - scheduler.remaining_quantum;
             update_io_bound_status(process, quantum_used, scheduler.initial_quantum);
         }
@@ -175,19 +198,22 @@ int8_t set_status(uint16_t pid, ProcessStatus new_status) {
         list_remove(&scheduler.ready_queues[process->priority], node);
         node = list_append(&scheduler.blocked_queue, process);
         scheduler.processes[pid] = node;
-    } else if (old_status == BLOCKED && new_status == READY) {
+    }
+    else if (old_status == BLOCKED && new_status == READY)
+    {
         // Move back to ready with max priority (priority boost)
         list_remove(&scheduler.blocked_queue, node);
         process->priority = NUM_PRIORITIES - 1;
         node = list_prepend(&scheduler.ready_queues[process->priority], process);
         scheduler.processes[pid] = node;
-        scheduler.remaining_quantum = 0;  // Force reschedule
+        scheduler.remaining_quantum = 0; // Force reschedule
     }
 
     return new_status;
 }
 
-int32_t kill_process(uint16_t pid, int32_t retval) {
+int32_t kill_process(uint16_t pid, int32_t retval)
+{
     if (pid >= MAX_PROCESSES || scheduler.processes[pid] == NULL)
         return -1;
 
@@ -198,9 +224,12 @@ int32_t kill_process(uint16_t pid, int32_t retval) {
         return -1;
 
     // Remove from queue
-    if (process->status == BLOCKED) {
+    if (process->status == BLOCKED)
+    {
         list_remove(&scheduler.blocked_queue, node);
-    } else {
+    }
+    else
+    {
         list_remove(&scheduler.ready_queues[process->priority], node);
     }
 
@@ -209,34 +238,41 @@ int32_t kill_process(uint16_t pid, int32_t retval) {
 
     // Check if parent is waiting for this process
     uint16_t parent_pid = process->parent_pid;
-    if (parent_pid < MAX_PROCESSES && scheduler.processes[parent_pid] != NULL) {
+    if (parent_pid < MAX_PROCESSES && scheduler.processes[parent_pid] != NULL)
+    {
         Process *parent = (Process *)scheduler.processes[parent_pid]->data;
-        
+
         // If parent is waiting for this specific child, unblock it
-        if (parent->waiting_for_pid == pid && parent->status == BLOCKED) {
+        if (parent->waiting_for_pid == pid && parent->status == BLOCKED)
+        {
             set_status(parent_pid, READY);
         }
     }
 
     // If current process is dying, force context switch
-    if (pid == scheduler.current_pid) {
+    if (pid == scheduler.current_pid)
+    {
         yield();
     }
 
     return 0;
 }
 
-int32_t kill_current_process(int32_t retval) {
+int32_t kill_current_process(int32_t retval)
+{
     return kill_process(scheduler.current_pid, retval);
 }
 
-uint16_t get_pid() {
+uint16_t get_pid()
+{
     return scheduler.current_pid;
 }
 
-void yield() {
+void yield()
+{
     // Track quantum usage when process voluntarily yields
-    if (scheduler.processes[scheduler.current_pid] != NULL && scheduler.initial_quantum > 0) {
+    if (scheduler.processes[scheduler.current_pid] != NULL && scheduler.initial_quantum > 0)
+    {
         Process *current_process = (Process *)scheduler.processes[scheduler.current_pid]->data;
         int16_t quantum_used = scheduler.initial_quantum - scheduler.remaining_quantum;
         update_io_bound_status(current_process, quantum_used, scheduler.initial_quantum);
@@ -246,33 +282,43 @@ void yield() {
     }
 
     scheduler.remaining_quantum = 0;
-    __asm__ volatile("int $0x20");  // Force timer interrupt
+    __asm__ volatile("int $0x20"); // Force timer interrupt
 }
 
-void *schedule(void *current_rsp) {
+void *schedule(void *current_rsp)
+{
     static int first_time = 1;
 
     scheduler.remaining_quantum--;
 
-    if (!scheduler.num_processes || scheduler.remaining_quantum > 0) {
+    if (!scheduler.num_processes || scheduler.remaining_quantum > 0)
+    {
         return current_rsp;
     }
 
     // Save current process state
-    if (scheduler.processes[scheduler.current_pid] != NULL) {
+    if (scheduler.processes[scheduler.current_pid] != NULL)
+    {
         Process *current_process = (Process *)scheduler.processes[scheduler.current_pid]->data;
 
-        if (!first_time) {
+        if (!first_time)
+        {
             current_process->stack_pos = current_rsp;
-        } else {
+        }
+        else
+        {
             first_time = 0;
         }
 
-        if (current_process->status == RUNNING) {
+        if (current_process->status == RUNNING)
+        {
             current_process->status = READY;
 
+            uint8_t rotated = 0;  // Track if we already rotated via set_priority
+
             // Process consumed entire quantum
-            if (scheduler.remaining_quantum == 0 && scheduler.initial_quantum > 0) {
+            if (scheduler.remaining_quantum == 0 && scheduler.initial_quantum > 0)
+            {
                 // Update I/O bound status (used 100% of quantum)
                 update_io_bound_status(current_process, scheduler.initial_quantum, scheduler.initial_quantum);
 
@@ -280,13 +326,21 @@ void *schedule(void *current_rsp) {
                 current_process->quantum_consumed_count++;
 
                 // Delayed priority aging - only age if threshold is reached
-                if (current_process->quantum_consumed_count >= AGING_THRESHOLD && current_process->priority > 0) {
+                if (current_process->quantum_consumed_count >= AGING_THRESHOLD && current_process->priority > 0)
+                {
                     uint8_t new_priority = current_process->priority - 1;
                     set_priority(scheduler.current_pid, new_priority);
+                    rotated = 1;  // set_priority rotates the process
 
                     // Reset counter after aging
                     current_process->quantum_consumed_count = 0;
                 }
+            }
+
+            // Always rotate to end of queue for round-robin (if not already done via aging)
+            if (!rotated)
+            {
+                set_priority(scheduler.current_pid, current_process->priority);
             }
         }
     }
@@ -303,39 +357,41 @@ void *schedule(void *current_rsp) {
     return next_process->stack_pos;
 }
 
-int32_t waitpid(uint16_t pid) {
+int32_t waitpid(uint16_t pid)
+{
     // Check if child process exists
     if (pid >= MAX_PROCESSES || scheduler.processes[pid] == NULL)
         return -1;
-    
+
     Node *child_node = scheduler.processes[pid];
     Process *child_process = (Process *)child_node->data;
-    
+
     // Check if calling process is the parent
     if (child_process->parent_pid != scheduler.current_pid)
         return -1;
-    
+
     // Get parent process
     Process *parent = (Process *)scheduler.processes[scheduler.current_pid]->data;
     parent->waiting_for_pid = pid;
-    
+
     // If child hasn't terminated yet, block parent until it does
-    if (child_process->status != ZOMBIE) {
+    if (child_process->status != ZOMBIE)
+    {
         set_status(parent->pid, BLOCKED);
         yield();
     }
-    
+
     // Child is zombie, collect return value
     int32_t retval = child_process->return_value;
-    
+
     // Clean up zombie process
     scheduler.processes[pid] = NULL;
     scheduler.num_processes--;
     free_process(child_process);
     mm_free(child_node);
-    
+
     // Clear waiting state
     parent->waiting_for_pid = 0;
-    
+
     return retval;
 }
