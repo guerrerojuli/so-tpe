@@ -3,6 +3,7 @@
 #include "include/process.h"
 #include "include/memoryManager.h"
 #include "include/lib.h"
+#include "include/pipe.h"
 #include <stddef.h>
 
 extern void *_initialize_stack_frame(void *wrapper, void *code, void *stack_top, void *args);
@@ -86,6 +87,14 @@ void init_process(Process *process, uint16_t pid, uint16_t parent_pid,
 }
 
 void free_process(Process *process) {
+    // Close all pipe file descriptors
+    for (int i = 0; i < 3; i++) {
+        int16_t fd = process->file_descriptors[i];
+        if (fd >= BUILT_IN_DESCRIPTORS) {
+            pipe_close_for_pid(process->pid, fd);
+        }
+    }
+
     mm_free(process->stack_base);
     if (process->name)
         mm_free(process->name);

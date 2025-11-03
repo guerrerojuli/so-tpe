@@ -24,6 +24,9 @@ static uint64_t (*intHandlers[])(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint6
     [SYSCALL_SEM_WAIT] = sys_sem_wait,
     [SYSCALL_SEM_POST] = sys_sem_post,
     [SYSCALL_WAITPID] = sys_waitpid,
+    [SYSCALL_PIPE_OPEN] = sys_pipe_open,
+    [SYSCALL_PIPE_CLOSE] = sys_pipe_close,
+    [SYSCALL_PIPE_GET] = sys_pipe_get,
     [SYSCALL_GET_PROCESS_INFO] = sys_get_process_info,
 };
 

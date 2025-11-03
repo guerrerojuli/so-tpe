@@ -6,10 +6,21 @@
 #include <memoryManager.h>
 #include <semaphoreManager.h>
 #include <lib.h>
+#include <pipe.h>
 
 // I/O syscalls
 uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3)
 {
+    // Check if it's a pipe
+    if (fd >= BUILT_IN_DESCRIPTORS) {
+        return pipe_read((uint16_t)fd, buf, count);
+    }
+
+    // Handle DEV_NULL
+    if ((int16_t)fd == DEV_NULL) {
+        return 0;
+    }
+
     switch (fd)
     {
     case STDIN:
@@ -29,6 +40,16 @@ uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uin
 
 uint64_t sys_write(uint64_t fd, const char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3)
 {
+    // Check if it's a pipe
+    if (fd >= BUILT_IN_DESCRIPTORS) {
+        return pipe_write(get_pid(), (uint16_t)fd, buf, count);
+    }
+
+    // Handle DEV_NULL
+    if ((int16_t)fd == DEV_NULL) {
+        return count;  // Discard all output
+    }
+
     switch (fd)
     {
     case STDOUT:
@@ -168,6 +189,25 @@ uint64_t sys_sem_post(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uin
 uint64_t sys_waitpid(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
 {
     int32_t result = waitpid((uint16_t)pid);
+    return (uint64_t)result;
+}
+
+// Pipe syscalls
+uint64_t sys_pipe_open(uint64_t id, uint64_t mode, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4)
+{
+    int8_t result = pipe_open_for_pid(get_pid(), (uint16_t)id, (uint8_t)mode);
+    return (uint64_t)result;
+}
+
+uint64_t sys_pipe_close(uint64_t id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
+{
+    int8_t result = pipe_close_for_pid(get_pid(), (uint16_t)id);
+    return (uint64_t)result;
+}
+
+uint64_t sys_pipe_get(uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5, uint64_t _unused6)
+{
+    int16_t result = pipe_get();
     return (uint64_t)result;
 }
 

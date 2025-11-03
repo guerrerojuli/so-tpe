@@ -24,7 +24,10 @@
 #define SYSCALL_SEM_WAIT 16
 #define SYSCALL_SEM_POST 17
 #define SYSCALL_WAITPID 18
-#define SYSCALL_GET_PROCESS_INFO 19
+#define SYSCALL_PIPE_OPEN 19
+#define SYSCALL_PIPE_CLOSE 20
+#define SYSCALL_PIPE_GET 21
+#define SYSCALL_GET_PROCESS_INFO 22
 
 // I/O syscalls
 uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3);
@@ -52,6 +55,11 @@ uint64_t sys_sem_close(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, ui
 uint64_t sys_sem_destroy(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
 uint64_t sys_sem_wait(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
 uint64_t sys_sem_post(uint64_t sem_id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
+
+// Pipe syscalls
+uint64_t sys_pipe_open(uint64_t id, uint64_t mode, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4);
+uint64_t sys_pipe_close(uint64_t id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
+uint64_t sys_pipe_get(uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5, uint64_t _unused6);
 
 // Process info syscalls
 uint64_t sys_get_process_info(uint64_t info_array_ptr, uint64_t max_count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4);

@@ -45,6 +45,11 @@ int64_t sys_sem_destroy(uint64_t sem_id);
 int64_t sys_sem_wait(uint64_t sem_id);
 int64_t sys_sem_post(uint64_t sem_id);
 
+// Pipe syscalls
+int64_t sys_pipe_open(uint16_t id, uint8_t mode);
+int64_t sys_pipe_close(uint16_t id);
+int16_t sys_pipe_get(void);
+
 // Process info syscalls
 int64_t sys_get_process_info(ProcessInfo *info_array, uint64_t max_count);
 

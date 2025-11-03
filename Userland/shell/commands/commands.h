@@ -25,6 +25,7 @@ extern command divzero_cmd;
 extern command invop_cmd;
 extern command test_sync_cmd;
 extern command ps_cmd;
+extern command test_pipes_cmd;
 
 // Array de todos los comandos (definido en shell.c)
 extern command *all_commands[];

@@ -14,6 +14,9 @@ GLOBAL sys_sem_destroy
 GLOBAL sys_sem_wait
 GLOBAL sys_sem_post
 GLOBAL sys_waitpid
+GLOBAL sys_pipe_open
+GLOBAL sys_pipe_close
+GLOBAL sys_pipe_get
 GLOBAL sys_get_process_info
 
 section .text
@@ -48,7 +51,10 @@ section .text
 ; SYSCALL_SEM_WAIT = 16
 ; SYSCALL_SEM_POST = 17
 ; SYSCALL_WAITPID = 18
-; SYSCALL_GET_PROCESS_INFO = 19
+; SYSCALL_PIPE_OPEN = 19
+; SYSCALL_PIPE_CLOSE = 20
+; SYSCALL_PIPE_GET = 21
+; SYSCALL_GET_PROCESS_INFO = 22
 
 sys_read:
     syscall 0
@@ -98,6 +104,15 @@ sys_sem_post:
 sys_waitpid:
     syscall 18
 
-sys_get_process_info:
+sys_pipe_open:
     syscall 19
+
+sys_pipe_close:
+    syscall 20
+
+sys_pipe_get:
+    syscall 21
+
+sys_get_process_info:
+    syscall 22
 
