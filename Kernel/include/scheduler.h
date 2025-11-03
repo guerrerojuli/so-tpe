@@ -28,6 +28,7 @@ int16_t create_process(MainFunction code, char **args, char *name,
                        uint8_t priority, int16_t fds[3], uint8_t unkillable);
 int32_t kill_process(uint16_t pid, int32_t retval);
 int32_t kill_current_process(int32_t retval);
+void kill_foreground_process(void);  // Kill process with stdin == STDIN (Ctrl+C)
 uint16_t get_pid();
 void yield();
 int8_t set_priority(uint16_t pid, uint8_t new_priority);
@@ -35,5 +36,6 @@ int8_t set_status(uint16_t pid, ProcessStatus new_status);
 void *schedule(void *current_rsp);  // Called from timer interrupt
 int32_t waitpid(uint16_t pid);  // Wait for child process to terminate
 int32_t get_process_info(ProcessInfo *info_array, uint32_t max_count);  // Get info for all processes
+int16_t get_process_fd(uint8_t fd_index);  // Get current process's file descriptor
 
 #endif

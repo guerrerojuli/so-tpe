@@ -3,7 +3,7 @@
 #include "unistd.h"
 #include "commands.h"
 
-static int divzero_func(void) {
+static int divzero_func(int argc, char **argv) {
     printf("Triggering divide by zero exception...\n", NULL);
     
     // Provocar una división por cero

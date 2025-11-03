@@ -3,7 +3,7 @@
 #include "unistd.h"
 #include "commands.h"
 
-static int clear_func(void) {
+static int clear_func(int argc, char **argv) {
     sys_clear_text_buffer();
     return 0;
 }

@@ -7,21 +7,35 @@
 #include <semaphoreManager.h>
 #include <lib.h>
 #include <pipe.h>
+#include <time.h>
 
 // I/O syscalls
 uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3)
 {
-    // Check if it's a pipe
-    if (fd >= BUILT_IN_DESCRIPTORS) {
-        return pipe_read((uint16_t)fd, buf, count);
-    }
+    // Get actual file descriptor from process's FD table
+    int16_t actual_fd = get_process_fd((uint8_t)fd);
 
-    // Handle DEV_NULL
-    if ((int16_t)fd == DEV_NULL) {
+    // If the process doesn't have this FD (shouldn't happen), fail
+    if (actual_fd == -1 && fd < 3) {
         return 0;
     }
 
-    switch (fd)
+    // For FDs >= 3, they're direct pipe descriptors, not indirected
+    if (fd >= 3) {
+        actual_fd = (int16_t)fd;
+    }
+
+    // Check if it's a pipe
+    if (actual_fd >= BUILT_IN_DESCRIPTORS) {
+        return pipe_read((uint16_t)actual_fd, buf, count);
+    }
+
+    // Handle DEV_NULL
+    if (actual_fd == DEV_NULL) {
+        return 0;  // Reading from DEV_NULL returns EOF immediately
+    }
+
+    switch (actual_fd)
     {
     case STDIN:
         int i = 0;
@@ -40,17 +54,30 @@ uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uin
 
 uint64_t sys_write(uint64_t fd, const char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3)
 {
+    // Get actual file descriptor from process's FD table
+    int16_t actual_fd = get_process_fd((uint8_t)fd);
+
+    // If the process doesn't have this FD (shouldn't happen), fail
+    if (actual_fd == -1 && fd < 3) {
+        return 0;
+    }
+
+    // For FDs >= 3, they're direct pipe descriptors, not indirected
+    if (fd >= 3) {
+        actual_fd = (int16_t)fd;
+    }
+
     // Check if it's a pipe
-    if (fd >= BUILT_IN_DESCRIPTORS) {
-        return pipe_write(get_pid(), (uint16_t)fd, buf, count);
+    if (actual_fd >= BUILT_IN_DESCRIPTORS) {
+        return pipe_write(get_pid(), (uint16_t)actual_fd, buf, count);
     }
 
     // Handle DEV_NULL
-    if ((int16_t)fd == DEV_NULL) {
-        return count;  // Discard all output
+    if (actual_fd == DEV_NULL) {
+        return count;  // Discard all output, pretend we wrote it
     }
 
-    switch (fd)
+    switch (actual_fd)
     {
     case STDOUT:
         console_write(buf, count, 0xFFFFFF);
@@ -216,4 +243,18 @@ uint64_t sys_get_process_info(uint64_t info_array_ptr, uint64_t max_count, uint6
     ProcessInfo *info_array = (ProcessInfo *)info_array_ptr;
     int32_t result = get_process_info(info_array, (uint32_t)max_count);
     return (uint64_t)result;
+}
+
+uint64_t sys_sleep(uint64_t seconds, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
+{
+    // Calculate target ticks (18 ticks per second)
+    uint64_t ticks_to_wait = seconds * 18;
+    uint64_t target_ticks = ticks_elapsed() + ticks_to_wait;
+
+    // Yield CPU until target time is reached
+    while (ticks_elapsed() < target_ticks) {
+        yield();  // Give up CPU to other processes
+    }
+
+    return 0;
 }

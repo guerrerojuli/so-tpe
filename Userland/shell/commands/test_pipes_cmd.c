@@ -6,9 +6,9 @@
 // Forward declaration from test_pipes.c
 extern int test_pipes(int argc, char **argv);
 
-static int test_pipes_func(void) {
-    // Call test_pipes with current_args
-    return test_pipes(arg_count - 1, &current_args[1]);
+static int test_pipes_func(int argc, char **argv) {
+    // Call test_pipes with argv
+    return test_pipes(argc - 1, &argv[1]);
 }
 
 command test_pipes_cmd = {

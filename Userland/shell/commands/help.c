@@ -2,7 +2,7 @@
 #include "stddef.h"
 #include "commands.h"
 
-static int help_func(void) {
+static int help_func(int argc, char **argv) {
     printf("Available commands:\n", NULL);
     for (int i = 0; all_commands[i] != NULL; i++) {
         void *args[2] = {all_commands[i]->name, all_commands[i]->description};

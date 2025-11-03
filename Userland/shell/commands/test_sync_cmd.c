@@ -6,17 +6,17 @@
 // Forward declaration from test_sync.c
 extern uint64_t test_sync(uint64_t argc, char *argv[]);
 
-static int test_sync_func(void) {
-    // Call test_sync with current_args
-    // arg_count includes the command name, so we pass arg_count - 1
-    if (arg_count <= 1) {
+static int test_sync_func(int argc, char **argv) {
+    // Call test_sync with argv
+    // argc includes the command name, so we pass argc - 1
+    if (argc <= 1) {
         printf("Usage: test-sync <n> <use_sem>\n", NULL);
         printf("  n: number of iterations\n", NULL);
         printf("  use_sem: 0=no synchronization, 1=use semaphores\n", NULL);
         return -1;
     }
     
-    return test_sync(arg_count - 1, &current_args[1]);
+    return test_sync(argc - 1, &argv[1]);
 }
 
 command test_sync_cmd = {

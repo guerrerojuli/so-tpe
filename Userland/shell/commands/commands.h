@@ -7,7 +7,7 @@
 typedef struct
 {
     char *name;
-    int (*func)(void);
+    int (*func)(int argc, char **argv);  // Changed to match MainFunction signature
     char *description;
     char *manual;
 } command;
@@ -26,6 +26,10 @@ extern command invop_cmd;
 extern command test_sync_cmd;
 extern command ps_cmd;
 extern command test_pipes_cmd;
+extern command loop_cmd;
+extern command cat_cmd;
+extern command wc_cmd;
+extern command filter_cmd;
 
 // Array de todos los comandos (definido en shell.c)
 extern command *all_commands[];

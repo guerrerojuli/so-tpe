@@ -89,3 +89,18 @@ char *strtok(char *str, const char *delims){
     last = NULL;
     return token_start;
 }
+
+// Find first occurrence of character c in string s
+char *strchr(const char *s, int c) {
+    while (*s != '\0') {
+        if (*s == (char)c) {
+            return (char *)s;
+        }
+        s++;
+    }
+    // Check if c is '\0' (looking for null terminator)
+    if (c == '\0') {
+        return (char *)s;
+    }
+    return NULL;
+}

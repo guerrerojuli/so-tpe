@@ -2,10 +2,10 @@
 #include "stddef.h"
 #include "commands.h"
 
-static int echo_func(void) {
-    for (int i = 1; i < arg_count; i++) {
-        printf("%s", (void**)&current_args[i]);
-        if (i < arg_count - 1) {
+static int echo_func(int argc, char **argv) {
+    for (int i = 1; i < argc; i++) {
+        printf("%s", (void**)&argv[i]);
+        if (i < argc - 1) {
             printf(" ", NULL);
         }
     }

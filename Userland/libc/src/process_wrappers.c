@@ -1,0 +1,20 @@
+#include "../include/unistd.h"
+#include "../include/stddef.h"
+
+// Process creation with custom file descriptors
+int64_t create_process_with_fds(void *code, char **args, char *name,
+                                uint8_t priority, int16_t fds[3]) {
+    return sys_create_process((uint64_t)code, (uint64_t)args,
+                             (uint64_t)name, (uint64_t)priority,
+                             (uint64_t)fds);
+}
+
+// Wrapper for waitpid
+int64_t waitpid(uint16_t pid) {
+    return sys_waitpid((uint64_t)pid);
+}
+
+// Wrapper for pipe_get
+int16_t pipe_get(void) {
+    return (int16_t)sys_pipe_get();
+}

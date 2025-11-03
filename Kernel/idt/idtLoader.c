@@ -20,6 +20,7 @@ typedef struct {
 #define IRQ0_ID 0x20
 #define IRQ1_ID 0x21
 #define SYSCALL_ID 0x80
+#define YIELD_ID 0x81
 #define CODE_SEGMENT_SELECTOR 0x08
 #define PIC_MASTER_MASK_VALUE 0xFC
 #define PIC_SLAVE_MASK_VALUE 0xFF
@@ -33,6 +34,7 @@ void load_idt() {
   setup_IDT_entry (IRQ0_ID, (uint64_t)&_irq00Handler);
   setup_IDT_entry (IRQ1_ID, (uint64_t)&_irq01Handler);
   setup_IDT_entry (SYSCALL_ID, (uint64_t)&_int80Handler);
+  setup_IDT_entry (YIELD_ID, (uint64_t)&_yieldHandler);
 
 	//Habilita las interrupciones de teclado y de timer
 	picMasterMask(PIC_MASTER_MASK_VALUE); 
