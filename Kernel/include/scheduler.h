@@ -8,7 +8,7 @@
 #define MAX_PROCESSES 20
 #define IDLE_PID 0
 #define NUM_PRIORITIES 5
-#define AGING_THRESHOLD 100  // Process must consume full quantum this many times before aging
+#define AGING_THRESHOLD 10   // Process must consume full quantum this many times before aging
 
 // Process info structure for ps command
 typedef struct {
@@ -30,6 +30,7 @@ int32_t kill_process(uint16_t pid, int32_t retval);
 int32_t kill_current_process(int32_t retval);
 void kill_foreground_process(void);  // Kill process with stdin == STDIN (Ctrl+C)
 uint16_t get_pid();
+uint16_t get_foreground_pid();  // Get foreground process PID (0 if none)
 void yield();
 int8_t set_priority(uint16_t pid, uint8_t new_priority);
 int8_t set_status(uint16_t pid, ProcessStatus new_status);

@@ -58,6 +58,7 @@ command *all_commands[] = {
     &cat_cmd,
     &wc_cmd,
     &filter_cmd,
+    &kill_cmd,
     NULL // Terminator
 };
 

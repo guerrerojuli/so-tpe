@@ -301,9 +301,12 @@ static void console_render_incremental(uint64_t from_pos)
         return;
     }
 
-    // Don't disable interrupts - allow background processes to run
+    _cli();
+
     console_render_range(from_pos, buffer_length);
     swap_buffers();
+
+    _sti();
 }
 
 // Renderiza toda la consola visible (para scroll o refresh completo)
@@ -311,10 +314,13 @@ static void console_render_all(void)
 {
     uint64_t start_pos = console_calculate_visible_start();
 
-    // Don't disable interrupts - allow background processes to run
+    _cli();
+
     clear_screen(DEFAULT_BACKGROUND_COLOR);
     console_render_from_position(start_pos);
     swap_buffers();
+
+    _sti();
 }
 
 // Scroll rápido moviendo píxeles en lugar de re-renderizar todo
@@ -352,7 +358,8 @@ static void console_scroll_fast(uint64_t old_visible_start, uint64_t new_visible
         return;
     }
 
-    // Don't disable interrupts - allow background processes to run
+    _cli();
+
     // Acceso directo al back buffer
     uint8_t *back_buffer = get_back_buffer();
     uint64_t bytes_per_pixel = 3; // RGB
@@ -382,6 +389,8 @@ static void console_scroll_fast(uint64_t old_visible_start, uint64_t new_visible
             back_buffer[offset + 2] = bg_red;
         }
     }
+
+    _sti();
 
     // En lugar de calcular qué líneas renderizar, renderizamos todo lo visible
     // para asegurarnos de que sea correcto

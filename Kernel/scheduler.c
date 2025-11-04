@@ -283,6 +283,11 @@ uint16_t get_pid()
     return scheduler.current_pid;
 }
 
+uint16_t get_foreground_pid()
+{
+    return scheduler.foreground_pid;
+}
+
 void yield()
 {
     // Track quantum usage when process voluntarily yields

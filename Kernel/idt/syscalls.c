@@ -39,12 +39,10 @@ uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uin
     {
     case STDIN:
         int i = 0;
-        while (i < count)
+        for (i = 0; i < count; i++)
         {
-            char c = getChar();
-            if (c == 0)
-                continue;
-            buf[i++] = c;
+            // Use blocking read - will wait until a character is available
+            buf[i] = getCharBlocking();
         }
         return i;
     default:

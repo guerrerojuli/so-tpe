@@ -2,6 +2,7 @@
 #include <lib.h>
 #include <videoDriver.h>
 #include <registers.h>
+#include <semaphoreManager.h>
 
 // External function from scheduler to kill foreground process
 extern void kill_foreground_process(void);
@@ -69,6 +70,15 @@ typedef struct
 
 static kbd_state_t kbd_state = {0};
 
+// Keyboard semaphore for blocking I/O
+static sem_t kbd_semaphore = 0;  // Semaphore ID for keyboard
+
+// Initialize keyboard driver and semaphore
+void init_keyboard(void) {
+    // Initialize semaphore with value 0 (no data initially)
+    sem_init(&kbd_semaphore, 0);
+}
+
 static inline uint8_t has_buffer_space(void)
 {
     return kbd_state.count < BUFFER_SIZE;
@@ -84,6 +94,8 @@ static inline void insert_char(char c)
     kbd_state.buffer[kbd_state.write_ptr] = c;
     kbd_state.write_ptr = (kbd_state.write_ptr + 1) & (BUFFER_SIZE - 1); // Faster modulo for power of 2
     kbd_state.count++;
+    // Signal that data is available
+    sem_post(&kbd_semaphore);
 }
 
 static inline char extract_char(void)
@@ -191,4 +203,13 @@ void keyboard_handler(const registers_t *registers)
 char getChar(void)
 {
     return is_buffer_empty() ? 0 : extract_char();
+}
+
+// Blocking version of getChar - waits until a character is available
+char getCharBlocking(void)
+{
+    // Wait on semaphore until data is available
+    sem_wait(&kbd_semaphore);
+    // Once we wake up, we know there's data in the buffer
+    return extract_char();
 }
