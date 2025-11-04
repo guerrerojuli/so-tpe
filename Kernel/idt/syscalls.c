@@ -43,6 +43,12 @@ uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uin
         {
             // Use blocking read - will wait until a character is available
             buf[i] = getCharBlocking();
+
+            // Check if we got EOF (Ctrl+D returns -1)
+            if ((int8_t)buf[i] == -1) {
+                // Return immediately with bytes read including EOF
+                return i + 1;
+            }
         }
         return i;
     default:

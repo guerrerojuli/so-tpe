@@ -27,9 +27,6 @@ extern command test_sync_cmd;
 extern command ps_cmd;
 extern command test_pipes_cmd;
 extern command loop_cmd;
-extern command cat_cmd;
-extern command wc_cmd;
-extern command filter_cmd;
 extern command kill_cmd;
 
 // Array de todos los comandos (definido en shell.c)

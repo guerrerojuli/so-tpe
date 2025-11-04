@@ -3,6 +3,8 @@
 #include <videoDriver.h>
 #include <registers.h>
 #include <semaphoreManager.h>
+#include <scheduler.h>
+#include <consoleDriver.h>
 
 // External function from scheduler to kill foreground process
 extern void kill_foreground_process(void);
@@ -94,6 +96,7 @@ static inline void insert_char(char c)
     kbd_state.buffer[kbd_state.write_ptr] = c;
     kbd_state.write_ptr = (kbd_state.write_ptr + 1) & (BUFFER_SIZE - 1); // Faster modulo for power of 2
     kbd_state.count++;
+
     // Signal that data is available
     sem_post(&kbd_semaphore);
 }
@@ -208,8 +211,13 @@ char getChar(void)
 // Blocking version of getChar - waits until a character is available
 char getCharBlocking(void)
 {
+    // TP2_SO approach: No foreground check - trust the file descriptor system
+    // If a process has STDIN, it can read from keyboard
+    // This avoids race conditions and complex state management
+
     // Wait on semaphore until data is available
     sem_wait(&kbd_semaphore);
+
     // Once we wake up, we know there's data in the buffer
     return extract_char();
 }

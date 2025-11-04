@@ -4,6 +4,9 @@
 #include "include/scheduler.h"
 #include "include/list.h"
 #include "include/memoryManager.h"
+#include "include/pipe.h"
+#include "include/globals.h"
+#include "include/consoleDriver.h"
 
 typedef struct
 {
@@ -239,6 +242,19 @@ int32_t kill_process(uint16_t pid, int32_t retval)
     process->status = ZOMBIE;
     process->return_value = retval;
 
+    // Close all pipe file descriptors immediately to send EOF to readers
+    // This is critical for pipes - readers need to get EOF when writer dies
+    for (int i = 0; i < 3; i++)
+    {
+        int16_t fd = process->file_descriptors[i];
+        if (fd >= BUILT_IN_DESCRIPTORS)
+        {
+            // It's a pipe - close it now to send EOF
+            pipe_close_for_pid(pid, fd);
+            process->file_descriptors[i] = -1;  // Mark as closed
+        }
+    }
+
     // Clear foreground status if this was the foreground process
     if (pid == scheduler.foreground_pid)
     {
@@ -314,11 +330,17 @@ void *schedule(void *current_rsp)
     {
         scheduler.kill_fg_flag = 0;  // Clear flag
 
-        // Kill the foreground process if there is one
-        if (scheduler.foreground_pid != 0 &&
-            scheduler.processes[scheduler.foreground_pid] != NULL)
+        // TP2_SO approach: Kill current process if it has STDIN
+        // This is more reliable than tracking a separate foreground_pid
+        if (scheduler.current_pid != IDLE_PID &&
+            scheduler.processes[scheduler.current_pid] != NULL)
         {
-            kill_process(scheduler.foreground_pid, -1);  // Kill with signal -1 (interrupted)
+            Process *current = (Process *)scheduler.processes[scheduler.current_pid]->data;
+            // Check if this process has access to keyboard (STDIN)
+            if (current->file_descriptors[0] == STDIN)
+            {
+                kill_current_process(-1);  // Kill with signal -1 (interrupted)
+            }
         }
     }
 
