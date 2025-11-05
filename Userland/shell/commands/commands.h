@@ -28,6 +28,7 @@ extern command ps_cmd;
 extern command test_pipes_cmd;
 extern command loop_cmd;
 extern command kill_cmd;
+extern command wc_cmd;
 
 // Array de todos los comandos (definido en shell.c)
 extern command *all_commands[];

@@ -39,6 +39,7 @@ extern command test_pipes_cmd;
 
 // Import new commands
 extern command loop_cmd;
+extern command wc_cmd;
 
 // Array of all commands
 command *all_commands[] = {
@@ -53,6 +54,7 @@ command *all_commands[] = {
     &test_pipes_cmd,
     &loop_cmd,
     &kill_cmd,
+    &wc_cmd,
     NULL // Terminator
 };
 
@@ -288,11 +290,10 @@ void execute_piped_commands(ParsedInput *parsed) {
         void *pargs[2] = {&p1, &p2};
         printf("[%d,%d] Pipeline started in background\n", pargs);
     } else {
-        // TP2_SO approach: Only wait for the FIRST process in the pipeline
-        // The second process will complete naturally when it receives EOF
-        // Waiting for both can cause deadlock if first is killed
+        // Wait for both processes to prevent zombies
+        // When pid1 exits, it closes the pipe, causing pid2 to receive EOF and exit naturally
         waitpid((uint16_t)pid1);
-        // Don't wait for pid2 - it continues independently
+        waitpid((uint16_t)pid2);
     }
 }
 
