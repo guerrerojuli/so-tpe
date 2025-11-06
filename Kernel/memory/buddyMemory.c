@@ -283,4 +283,8 @@ void mm_get_stats(uint64_t *total, uint64_t *free) {
     buddy_get_stats(&buddy_zone, total, free);
 }
 
+const char* mm_get_name(void) {
+    return "Buddy System";
+}
+
 #endif // BUDDY

@@ -23,12 +23,12 @@ int kill_main(int argc, char **argv) {
     int result = sys_kill_process(pid, -1);  // -1 as signal (killed by user)
 
     if (result < 0) {
-        args[0] = (void*)(uint64_t)pid;
+        args[0] = (void*)&pid;
         printf("Failed to kill process %d (process not found or unkillable)\n", args);
         return 1;
     }
 
-    args[0] = (void*)(uint64_t)pid;
+    args[0] = (void*)&pid;
     printf("Process %d killed\n", args);
     return 0;
 }

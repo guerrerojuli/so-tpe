@@ -149,6 +149,12 @@ uint64_t sys_block(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_t 
     return (uint64_t)result;
 }
 
+uint64_t sys_unblock(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
+{
+    int8_t result = set_status((uint16_t)pid, READY);
+    return (uint64_t)result;
+}
+
 // Memory management syscalls
 uint64_t sys_malloc(uint64_t size, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
 {
@@ -161,15 +167,36 @@ uint64_t sys_free(uint64_t ptr, uint64_t _unused1, uint64_t _unused2, uint64_t _
     return 0;
 }
 
-uint64_t sys_mem_state(uint64_t total_ptr, uint64_t free_ptr, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4)
+uint64_t sys_mem_state(uint64_t total_ptr, uint64_t free_ptr, uint64_t used_ptr, uint64_t name_ptr, uint64_t _unused1, uint64_t _unused2)
 {
-    uint64_t total, free;
+    uint64_t total, free, used;
     mm_get_stats(&total, &free);
+
+    // For buddy system, values are in pages, convert to bytes
+    #ifdef BUDDY
+    total *= 4096;  // PAGE_SIZE
+    free *= 4096;
+    #endif
+
+    used = total - free;
 
     if (total_ptr)
         *((uint64_t*)total_ptr) = total;
     if (free_ptr)
         *((uint64_t*)free_ptr) = free;
+    if (used_ptr)
+        *((uint64_t*)used_ptr) = used;
+    if (name_ptr) {
+        const char* name = mm_get_name();
+        // Copy the name to userland memory
+        char* dest = (char*)name_ptr;
+        int i = 0;
+        while (name[i] != '\0' && i < 31) {  // Max 31 chars + null
+            dest[i] = name[i];
+            i++;
+        }
+        dest[i] = '\0';
+    }
 
     return 0;
 }

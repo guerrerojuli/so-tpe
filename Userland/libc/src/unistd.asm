@@ -7,6 +7,7 @@ GLOBAL sys_get_pid
 GLOBAL sys_yield
 GLOBAL sys_set_priority
 GLOBAL sys_block
+GLOBAL sys_unblock
 GLOBAL sys_sem_init
 GLOBAL sys_sem_open
 GLOBAL sys_sem_close
@@ -19,6 +20,7 @@ GLOBAL sys_pipe_close
 GLOBAL sys_pipe_get
 GLOBAL sys_get_process_info
 GLOBAL sys_sleep
+GLOBAL sys_mem_state
 
 section .text
 
@@ -57,6 +59,7 @@ section .text
 ; SYSCALL_PIPE_GET = 21
 ; SYSCALL_GET_PROCESS_INFO = 22
 ; SYSCALL_SLEEP = 23
+; SYSCALL_UNBLOCK = 24
 
 sys_read:
     syscall 0
@@ -84,6 +87,12 @@ sys_clear_text_buffer:
 
 sys_block:
     syscall 8
+
+sys_mem_state:
+    syscall 11
+
+sys_unblock:
+    syscall 24
 
 sys_sem_init:
     syscall 12

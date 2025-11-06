@@ -35,6 +35,7 @@ uint64_t sys_get_pid(void);
 uint64_t sys_yield(void);
 uint64_t sys_set_priority(uint64_t pid, uint64_t new_priority);
 uint64_t sys_block(uint64_t pid);
+uint64_t sys_unblock(uint64_t pid);
 int64_t sys_waitpid(uint64_t pid);
 
 // Semaphore syscalls
@@ -52,6 +53,9 @@ int16_t sys_pipe_get(void);
 
 // Process info syscalls
 int64_t sys_get_process_info(ProcessInfo *info_array, uint64_t max_count);
+
+// Memory info syscalls
+uint64_t sys_mem_state(uint64_t total_ptr, uint64_t free_ptr, uint64_t used_ptr, uint64_t name_ptr);
 
 // Time syscalls
 uint64_t sys_sleep(uint64_t seconds);

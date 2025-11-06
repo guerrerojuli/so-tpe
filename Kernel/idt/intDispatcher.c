@@ -14,6 +14,7 @@ static uint64_t (*intHandlers[])(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint6
     [SYSCALL_SET_PRIORITY] = sys_set_priority,
     [SYSCALL_CLEAR_TEXT_BUFFER] = sys_clear_text_buffer_wrapper,
     [SYSCALL_BLOCK] = sys_block,
+    [SYSCALL_UNBLOCK] = sys_unblock,
     [SYSCALL_MALLOC] = sys_malloc,
     [SYSCALL_FREE] = sys_free,
     [SYSCALL_MEM_STATE] = sys_mem_state,

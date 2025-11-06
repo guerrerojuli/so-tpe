@@ -67,7 +67,7 @@ KHEAPLCAB kernel_heap;
 
 #ifdef BUDDY
 zone_t buddy_zone;
-static page_t buddy_pages[2048];
+page_t buddy_pages[2048];
 #endif
 
 void initializeMemoryManagers()

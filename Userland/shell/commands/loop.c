@@ -4,11 +4,13 @@
 #include "stddef.h"
 
 static int loop_func(int argc, char **argv) {
-    if (argc < 2) {
+    // Require exactly 2 arguments (command name + seconds)
+    if (argc != 2) {
         printf("Usage: loop <seconds>\n", NULL);
         return -1;
     }
 
+    // Parse the seconds argument
     int seconds = 0;
     char *str = argv[1];
     while (*str >= '0' && *str <= '9') {
@@ -16,8 +18,17 @@ static int loop_func(int argc, char **argv) {
         str++;
     }
 
+    // Check if entire string was consumed (all numeric)
+    if (*str != '\0') {
+        void *args[1] = {argv[1]};
+        printf("Invalid argument: '%s' is not a valid number\n", args);
+        return -1;
+    }
+
+    // Check if seconds is valid (greater than 0)
     if (seconds <= 0) {
-        printf("Invalid seconds value\n", NULL);
+        void *args[1] = {argv[1]};
+        printf("Invalid seconds value: '%s' must be greater than 0\n", args);
         return -1;
     }
 

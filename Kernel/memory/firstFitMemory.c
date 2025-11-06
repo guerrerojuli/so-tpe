@@ -96,7 +96,7 @@ int k_heapLCABAddBlock(KHEAPLCAB *heap, uintptr_t addr, uint32_t size) {
 
     // Initialize the block header
     hb->size = size;
-    hb->used = 0;  // Nothing allocated yet
+    hb->used = sizeof(KHEAPBLOCKLCAB) + sizeof(KHEAPHDRLCAB);  // Account for block header and initial chunk header
 
     // Add this block to the front of the linked list
     hb->next = heap->fblock;
@@ -244,7 +244,12 @@ void k_heapLCABFree(KHEAPLCAB *heap, void *ptr) {
 
             // Update the block's used count
             // we only subtract the data size, not the header
-            hb->used -= (hdr->flagsize & 0x7fffffff);
+            uint32_t size_to_free = (hdr->flagsize & 0x7fffffff);
+            if (hb->used >= size_to_free) {
+                hb->used -= size_to_free;
+            } else {
+                hb->used = 0;  // Prevent underflow
+            }
 
             // Try to get the previous chunk header
             if (hdr->prevsize) {
@@ -274,7 +279,11 @@ void k_heapLCABFree(KHEAPLCAB *heap, void *ptr) {
                                     (nhdr->flagsize & 0x7fffffff);
 
                     // We eliminated a header, so reduce used count
-                    hb->used -= sizeof(KHEAPHDRLCAB);
+                    if (hb->used >= sizeof(KHEAPHDRLCAB)) {
+                        hb->used -= sizeof(KHEAPHDRLCAB);
+                    } else {
+                        hb->used = 0;  // Prevent underflow
+                    }
 
                     // Update the chunk after next to point back to us
                     nhdr = (KHEAPHDRLCAB*)((uintptr_t)&hdr[1] +
@@ -294,7 +303,11 @@ void k_heapLCABFree(KHEAPLCAB *heap, void *ptr) {
                                      (hdr->flagsize & 0x7fffffff);
 
                     // We eliminated a header
-                    hb->used -= sizeof(KHEAPHDRLCAB);
+                    if (hb->used >= sizeof(KHEAPHDRLCAB)) {
+                        hb->used -= sizeof(KHEAPHDRLCAB);
+                    } else {
+                        hb->used = 0;  // Prevent underflow
+                    }
 
                     // Update current chunk
                     hdr = phdr;
@@ -335,6 +348,10 @@ void mm_get_stats(uint64_t *total, uint64_t *free) {
         *total = 0;
         *free = 0;
     }
+}
+
+const char* mm_get_name(void) {
+    return "First-Fit";
 }
 
 #endif // FIRSTFIT

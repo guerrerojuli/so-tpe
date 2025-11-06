@@ -28,33 +28,32 @@ int arg_count = 0;
 
 // Import existing commands
 extern command clear_cmd;
-extern command echo_cmd;
 extern command help_cmd;
-extern command man_cmd;
-extern command divzero_cmd;
-extern command invop_cmd;
 extern command test_sync_cmd;
 extern command ps_cmd;
 extern command test_pipes_cmd;
 
 // Import new commands
 extern command loop_cmd;
+extern command kill_cmd;
+extern command nice_cmd;
+extern command block_cmd;
 extern command wc_cmd;
+extern command mem_cmd;
 
 // Array of all commands
 command *all_commands[] = {
     &clear_cmd,
-    &echo_cmd,
     &help_cmd,
-    &man_cmd,
-    &divzero_cmd,
-    &invop_cmd,
     &test_sync_cmd,
     &ps_cmd,
     &test_pipes_cmd,
     &loop_cmd,
     &kill_cmd,
+    &nice_cmd,
+    &block_cmd,
     &wc_cmd,
+    &mem_cmd,
     NULL // Terminator
 };
 

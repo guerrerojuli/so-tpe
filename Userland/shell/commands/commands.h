@@ -18,17 +18,16 @@ extern int arg_count;
 
 // Declaraciones de funciones de comandos
 extern command clear_cmd;
-extern command echo_cmd;
 extern command help_cmd;
-extern command man_cmd;
-extern command divzero_cmd;
-extern command invop_cmd;
 extern command test_sync_cmd;
 extern command ps_cmd;
 extern command test_pipes_cmd;
 extern command loop_cmd;
 extern command kill_cmd;
+extern command nice_cmd;
+extern command block_cmd;
 extern command wc_cmd;
+extern command mem_cmd;
 
 // Array de todos los comandos (definido en shell.c)
 extern command *all_commands[];
