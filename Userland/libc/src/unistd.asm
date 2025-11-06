@@ -18,6 +18,7 @@ GLOBAL sys_pipe_open
 GLOBAL sys_pipe_close
 GLOBAL sys_pipe_get
 GLOBAL sys_get_process_info
+GLOBAL sys_sleep
 
 section .text
 
@@ -55,6 +56,7 @@ section .text
 ; SYSCALL_PIPE_CLOSE = 20
 ; SYSCALL_PIPE_GET = 21
 ; SYSCALL_GET_PROCESS_INFO = 22
+; SYSCALL_SLEEP = 23
 
 sys_read:
     syscall 0
@@ -115,4 +117,7 @@ sys_pipe_get:
 
 sys_get_process_info:
     syscall 22
+
+sys_sleep:
+    syscall 23
 

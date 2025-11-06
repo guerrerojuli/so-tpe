@@ -53,4 +53,22 @@ int16_t sys_pipe_get(void);
 // Process info syscalls
 int64_t sys_get_process_info(ProcessInfo *info_array, uint64_t max_count);
 
+// Time syscalls
+uint64_t sys_sleep(uint64_t seconds);
+
+// Convenience wrapper for sleep
+static inline void sleep(int seconds) {
+    sys_sleep((uint64_t)seconds);
+}
+
+// Process creation with custom file descriptors
+int64_t create_process_with_fds(void *code, char **args, char *name,
+                                uint8_t priority, int16_t fds[3]);
+
+// Wrapper for waitpid
+int64_t waitpid(uint16_t pid);
+
+// Wrapper for pipe_get
+int16_t pipe_get(void);
+
 #endif

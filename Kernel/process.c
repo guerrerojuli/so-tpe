@@ -4,6 +4,7 @@
 #include "include/memoryManager.h"
 #include "include/lib.h"
 #include "include/pipe.h"
+#include "include/globals.h"
 #include <stddef.h>
 
 extern void *_initialize_stack_frame(void *wrapper, void *code, void *stack_top, void *args);
@@ -84,6 +85,15 @@ void init_process(Process *process, uint16_t pid, uint16_t parent_pid,
     process->file_descriptors[0] = fds[0];
     process->file_descriptors[1] = fds[1];
     process->file_descriptors[2] = fds[2];
+
+    // Auto-open pipes when process is created with pipe FDs
+    for (int i = 0; i < 3; i++) {
+        if (fds[i] >= BUILT_IN_DESCRIPTORS) {
+            // This is a pipe - open it for this process
+            uint8_t mode = (i == 0) ? READ : WRITE;  // stdin is READ, stdout/stderr are WRITE
+            pipe_open_for_pid(process->pid, fds[i], mode);
+        }
+    }
 }
 
 void free_process(Process *process) {

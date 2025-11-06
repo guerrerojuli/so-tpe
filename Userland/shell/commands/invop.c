@@ -3,7 +3,7 @@
 #include "unistd.h"
 #include "commands.h"
 
-static int invop_func(void) {
+static int invop_func(int argc, char **argv) {
     printf("Triggering invalid opcode exception...\n", NULL);
     
     // Array con el opcode inválido UD2 (0x0F 0x0B)

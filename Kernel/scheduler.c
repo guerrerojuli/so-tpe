@@ -4,6 +4,9 @@
 #include "include/scheduler.h"
 #include "include/list.h"
 #include "include/memoryManager.h"
+#include "include/pipe.h"
+#include "include/globals.h"
+#include "include/consoleDriver.h"
 
 typedef struct
 {
@@ -15,6 +18,8 @@ typedef struct
     uint16_t num_processes;
     int16_t remaining_quantum; // Changed to int16_t to support larger quantum values
     int16_t initial_quantum;   // Quantum assigned at start of time slice
+    uint8_t kill_fg_flag;      // Flag to kill foreground process (Ctrl+C)
+    uint16_t foreground_pid;    // PID of the current foreground process (0 = none)
 } Scheduler;
 
 static Scheduler scheduler;
@@ -83,6 +88,7 @@ void scheduler_init()
     scheduler.next_unused_pid = 0;
     scheduler.num_processes = 0;
     scheduler.remaining_quantum = 1;
+    scheduler.foreground_pid = 0;  // No foreground process initially
 }
 
 // Find highest priority ready process
@@ -236,6 +242,25 @@ int32_t kill_process(uint16_t pid, int32_t retval)
     process->status = ZOMBIE;
     process->return_value = retval;
 
+    // Close all pipe file descriptors immediately to send EOF to readers
+    // This is critical for pipes - readers need to get EOF when writer dies
+    for (int i = 0; i < 3; i++)
+    {
+        int16_t fd = process->file_descriptors[i];
+        if (fd >= BUILT_IN_DESCRIPTORS)
+        {
+            // It's a pipe - close it now to send EOF
+            pipe_close_for_pid(pid, fd);
+            process->file_descriptors[i] = -1;  // Mark as closed
+        }
+    }
+
+    // Clear foreground status if this was the foreground process
+    if (pid == scheduler.foreground_pid)
+    {
+        scheduler.foreground_pid = 0;
+    }
+
     // Check if parent is waiting for this process
     uint16_t parent_pid = process->parent_pid;
     if (parent_pid < MAX_PROCESSES && scheduler.processes[parent_pid] != NULL)
@@ -263,9 +288,20 @@ int32_t kill_current_process(int32_t retval)
     return kill_process(scheduler.current_pid, retval);
 }
 
+// Called by keyboard driver when Ctrl+C is pressed
+void kill_foreground_process(void)
+{
+    scheduler.kill_fg_flag = 1;
+}
+
 uint16_t get_pid()
 {
     return scheduler.current_pid;
+}
+
+uint16_t get_foreground_pid()
+{
+    return scheduler.foreground_pid;
 }
 
 void yield()
@@ -282,12 +318,31 @@ void yield()
     }
 
     scheduler.remaining_quantum = 0;
-    __asm__ volatile("int $0x20"); // Force timer interrupt
+    __asm__ volatile("int $0x81"); // Force context switch (not timer interrupt!)
 }
 
 void *schedule(void *current_rsp)
 {
     static int first_time = 1;
+
+    // Check if we need to kill foreground process (Ctrl+C)
+    if (scheduler.kill_fg_flag)
+    {
+        scheduler.kill_fg_flag = 0;  // Clear flag
+
+        // TP2_SO approach: Kill current process if it has STDIN
+        // This is more reliable than tracking a separate foreground_pid
+        if (scheduler.current_pid != IDLE_PID &&
+            scheduler.processes[scheduler.current_pid] != NULL)
+        {
+            Process *current = (Process *)scheduler.processes[scheduler.current_pid]->data;
+            // Check if this process has access to keyboard (STDIN)
+            if (current->file_descriptors[0] == STDIN)
+            {
+                kill_current_process(-1);  // Kill with signal -1 (interrupted)
+            }
+        }
+    }
 
     scheduler.remaining_quantum--;
 
@@ -374,6 +429,9 @@ int32_t waitpid(uint16_t pid)
     Process *parent = (Process *)scheduler.processes[scheduler.current_pid]->data;
     parent->waiting_for_pid = pid;
 
+    // Set child as foreground process (parent is waiting for it)
+    scheduler.foreground_pid = pid;
+
     // If child hasn't terminated yet, block parent until it does
     if (child_process->status != ZOMBIE)
     {
@@ -390,10 +448,24 @@ int32_t waitpid(uint16_t pid)
     free_process(child_process);
     mm_free(child_node);
 
-    // Clear waiting state
+    // Clear waiting state and foreground status
     parent->waiting_for_pid = 0;
+    scheduler.foreground_pid = 0;  // No more foreground process
 
     return retval;
+}
+
+// Get file descriptor for current process
+int16_t get_process_fd(uint8_t fd_index)
+{
+    if (fd_index >= 3)  // Only stdin(0), stdout(1), stderr(2)
+        return -1;
+
+    if (scheduler.processes[scheduler.current_pid] == NULL)
+        return -1;
+
+    Process *current = (Process *)scheduler.processes[scheduler.current_pid]->data;
+    return current->file_descriptors[fd_index];
 }
 
 int32_t get_process_info(ProcessInfo *info_array, uint32_t max_count)
@@ -425,9 +497,9 @@ int32_t get_process_info(ProcessInfo *info_array, uint32_t max_count)
             info_array[count].stack_base = process->stack_base;
             info_array[count].stack_pos = process->stack_pos;
 
-            // Determine if foreground: current running process or shell
-            // For simplicity, mark running process as foreground
-            info_array[count].is_foreground = (process->status == RUNNING) ? 1 : 0;
+            // Determine if foreground: check if this is the foreground process
+            // Only the process being waited on by waitpid() is foreground
+            info_array[count].is_foreground = (process->pid == scheduler.foreground_pid) ? 1 : 0;
 
             count++;
         }

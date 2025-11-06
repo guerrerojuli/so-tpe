@@ -28,6 +28,7 @@
 #define SYSCALL_PIPE_CLOSE 20
 #define SYSCALL_PIPE_GET 21
 #define SYSCALL_GET_PROCESS_INFO 22
+#define SYSCALL_SLEEP 23
 
 // I/O syscalls
 uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3);
@@ -42,6 +43,7 @@ uint64_t sys_yield(uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint
 uint64_t sys_set_priority(uint64_t pid, uint64_t new_priority, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4);
 uint64_t sys_block(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
 uint64_t sys_waitpid(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
+uint64_t sys_sleep(uint64_t seconds, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);
 
 // Memory management syscalls
 uint64_t sys_malloc(uint64_t size, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5);

@@ -6,7 +6,7 @@ SOURCES=$(shell find . -type f -name "*.c" -not -name "_loader.c") $(shell find 
 ASM_SOURCES=$(shell find . -name "*.asm")
 HEADERS=$(shell find . -name "*.h")
 ASM_OBJECTS=$(ASM_SOURCES:.asm=.o)
-LIBC_OBJECTS=$(LIBC_DIR)/src/*.o
+LIBC_OBJECTS=$(wildcard $(LIBC_DIR)/src/*.o)
 
 all: $(MODULE)
 

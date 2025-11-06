@@ -3,6 +3,8 @@
 
 #define SCANF_BUFF_MAX_SIZE 1024
 
+#define EOF (-1)
+
 // Simple FILE type for basic stream operations
 typedef int FILE;
 

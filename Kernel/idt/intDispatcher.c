@@ -28,6 +28,7 @@ static uint64_t (*intHandlers[])(uint64_t rdi, uint64_t rsi, uint64_t rdx, uint6
     [SYSCALL_PIPE_CLOSE] = sys_pipe_close,
     [SYSCALL_PIPE_GET] = sys_pipe_get,
     [SYSCALL_GET_PROCESS_INFO] = sys_get_process_info,
+    [SYSCALL_SLEEP] = sys_sleep,
 };
 
 uint64_t intDispatcher(const registers_t *registers)

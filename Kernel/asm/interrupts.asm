@@ -13,6 +13,7 @@ GLOBAL _irq00Handler
 GLOBAL _irq01Handler
 
 GLOBAL _int80Handler
+GLOBAL _yieldHandler
 
 GLOBAL _exception0Handler
 
@@ -171,6 +172,18 @@ _irq01Handler:
 
 _int80Handler:
 	intHandlerMaster
+
+; Yield handler - same as timer but without incrementing ticks
+_yieldHandler:
+	pushState
+
+	; Context switch only (no timer tick)
+	mov rdi, rsp       ; Pass current RSP to scheduler
+	call schedule      ; Returns new RSP in RAX
+	mov rsp, rax       ; Switch to new process stack
+
+	popState
+	iretq
 
 ;Zero Division Exception
 _exception0Handler:

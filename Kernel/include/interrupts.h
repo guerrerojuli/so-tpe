@@ -14,6 +14,7 @@ void _irq00Handler(void);
 void _irq01Handler(void);
 
 void _int80Handler(void);
+void _yieldHandler(void);
 
 void _exception0Handler(void);
 void _exception6Handler(void);

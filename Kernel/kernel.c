@@ -11,6 +11,7 @@
 #include <semaphoreManager.h>
 #include <pipe.h>
 #include <globals.h>
+#include <keyboardDriver.h>
 
 extern uint8_t text;
 extern uint8_t rodata;
@@ -88,6 +89,9 @@ int main()
 
 	// Initialize semaphore manager
 	semaphore_manager_init();
+
+	// Initialize keyboard driver (must be after semaphore manager)
+	init_keyboard();
 
 	// Initialize pipe manager
 	pipe_manager_init();

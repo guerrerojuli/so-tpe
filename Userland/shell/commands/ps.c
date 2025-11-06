@@ -38,7 +38,7 @@ static void uint64_to_hex(uint64_t value, char *buffer)
     buffer[18] = '\0';
 }
 
-static int ps_func(void)
+static int ps_func(int argc, char **argv)
 {
     ProcessInfo processes[MAX_PROCESS_COUNT];
 

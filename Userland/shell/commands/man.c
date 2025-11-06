@@ -3,8 +3,8 @@
 #include "string.h"
 #include "commands.h"
 
-static int man_func(void) {
-    if (arg_count < 2) {
+static int man_func(int argc, char **argv) {
+    if (argc < 2) {
         printf("Usage: man <command>\n", NULL);
         printf("Available manual pages:\n", NULL);
         for (int i = 0; all_commands[i] != NULL; i++) {
@@ -14,7 +14,7 @@ static int man_func(void) {
         return 0;
     }
     
-    char *cmd_name = current_args[1];
+    char *cmd_name = argv[1];
     
     // Buscar el comando en el array
     for (int i = 0; all_commands[i] != NULL; i++) {
