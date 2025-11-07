@@ -35,6 +35,7 @@ extern command test_pipes_cmd;
 
 // Import new commands
 extern command loop_cmd;
+extern command loop_ps_cmd;
 extern command kill_cmd;
 extern command nice_cmd;
 extern command block_cmd;
@@ -49,6 +50,7 @@ command *all_commands[] = {
     &ps_cmd,
     &test_pipes_cmd,
     &loop_cmd,
+    &loop_ps_cmd,
     &kill_cmd,
     &nice_cmd,
     &block_cmd,
