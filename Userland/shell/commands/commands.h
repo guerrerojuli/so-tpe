@@ -23,7 +23,6 @@ extern command test_sync_cmd;
 extern command ps_cmd;
 extern command test_pipes_cmd;
 extern command loop_cmd;
-extern command loop_ps_cmd;
 extern command kill_cmd;
 extern command nice_cmd;
 extern command block_cmd;
