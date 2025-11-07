@@ -75,10 +75,11 @@ typedef struct zone
     uint64_t free_pages;
     uint64_t start_pfn;
     page_t *pages;
+    uintptr_t heap_base;  // Actual heap start address
 } zone_t;
 
 // Buddy Memory Manager functions
-void buddy_init(zone_t *zone, uint64_t start_pfn, uint64_t total_pages, page_t *pages_array);
+void buddy_init(zone_t *zone, uint64_t start_pfn, uint64_t total_pages, page_t *pages_array, uintptr_t heap_base);
 void buddy_free_pages(zone_t *zone, page_t *page, int order);
 page_t *buddy_alloc_pages(zone_t *zone, int order);
 void buddy_add_memory(zone_t *zone, uint64_t start_pfn, uint64_t nr_pages);

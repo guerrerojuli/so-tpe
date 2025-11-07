@@ -71,7 +71,7 @@ static inline int is_buddy(uint64_t pfn1, uint64_t pfn2, int order)
   return get_buddy_pfn(pfn1, order) == pfn2;
 }
 
-void buddy_init(zone_t *zone, uint64_t start_pfn, uint64_t total_pages, page_t *pages_array)
+void buddy_init(zone_t *zone, uint64_t start_pfn, uint64_t total_pages, page_t *pages_array, uintptr_t heap_base)
 {
   int order;
   uint64_t i;
@@ -82,6 +82,7 @@ void buddy_init(zone_t *zone, uint64_t start_pfn, uint64_t total_pages, page_t *
   zone->total_pages = total_pages;
   zone->free_pages = 0;
   zone->pages = pages_array;
+  zone->heap_base = heap_base;
 
   for (order = 0; order <= MAX_ORDER; order++)
   {
@@ -106,8 +107,12 @@ static void add_to_free_list(zone_t *zone, page_t *page, int order)
   area->nr_free++;
   zone->free_pages += (1UL << order);
 
-  page->order = order;
-  SetPageBuddy(page);
+  // Set order and BUDDY flag for ALL pages in the block
+  uint64_t nr_pages = 1UL << order;
+  for (uint64_t i = 0; i < nr_pages; i++) {
+    page[i].order = order;
+    SetPageBuddy(&page[i]);
+  }
 }
 
 static void del_from_free_list(zone_t *zone, page_t *page, int order)
@@ -118,7 +123,11 @@ static void del_from_free_list(zone_t *zone, page_t *page, int order)
   area->nr_free--;
   zone->free_pages -= (1UL << order);
 
-  ClearPageBuddy(page);
+  // Clear BUDDY flag for ALL pages in the block
+  uint64_t nr_pages = 1UL << order;
+  for (uint64_t i = 0; i < nr_pages; i++) {
+    ClearPageBuddy(&page[i]);
+  }
 }
 
 // Libera páginas e intenta fusionar con buddies libres
@@ -195,6 +204,9 @@ page_t *buddy_alloc_pages(zone_t *zone, int order)
       add_to_free_list(zone, buddy, current_order);
     }
 
+    // Set final allocation order
+    page->order = order;
+
     break;
   }
 
@@ -245,6 +257,10 @@ uint64_t buddy_get_free_blocks(zone_t *zone, int order)
 
 // Unified memory manager interface implementation
 void* mm_alloc(uint32_t size) {
+    // Validate size
+    if (size == 0)
+        return NULL;
+
     // Calculate pages needed (minimum 1 page = 4KB)
     int order = 0;
     uint32_t pages_needed = (size + 4095) / 4096;
@@ -252,19 +268,42 @@ void* mm_alloc(uint32_t size) {
     while ((1UL << order) < pages_needed && order <= MAX_ORDER)
         order++;
 
+    // Check if order exceeds MAX_ORDER
+    if (order > MAX_ORDER)
+        return NULL;
+
     page_t *page = buddy_alloc_pages(&buddy_zone, order);
     if (!page)
         return NULL;
 
-    return (void*)(page->pfn * 4096);
+    // Return actual heap address, not PFN * 4096
+    uint64_t page_offset = page->pfn - buddy_zone.start_pfn;
+    return (void*)(buddy_zone.heap_base + (page_offset * 4096));
 }
 
 void mm_free(void *ptr) {
     if (!ptr)
         return;
 
-    uint64_t pfn = ((uint64_t)ptr) / 4096;
-    page_t *page = &buddy_zone.pages[pfn - buddy_zone.start_pfn];
+    // Check if pointer is within heap range
+    if ((uint64_t)ptr < buddy_zone.heap_base ||
+        (uint64_t)ptr >= buddy_zone.heap_base + (buddy_zone.total_pages * 4096))
+        return;
+
+    // Convert address to offset from heap base, then to page index
+    uint64_t offset = (uint64_t)ptr - buddy_zone.heap_base;
+    uint64_t page_index = offset / 4096;
+
+    // Bounds check
+    if (page_index >= buddy_zone.total_pages)
+        return;
+
+    page_t *page = &buddy_zone.pages[page_index];
+
+    // Verify the page is not already free (double-free protection)
+    if (PageBuddy(page))
+        return;
+
     buddy_free_pages(&buddy_zone, page, page->order);
 }
 
@@ -275,7 +314,7 @@ void mm_init(uintptr_t start, uint32_t size) {
     if (num_pages > 2048)
         num_pages = 2048;
 
-    buddy_init(&buddy_zone, start_pfn, num_pages, buddy_pages);
+    buddy_init(&buddy_zone, start_pfn, num_pages, buddy_pages, start);
     buddy_add_memory(&buddy_zone, start_pfn, num_pages);
 }
 
