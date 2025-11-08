@@ -1,8 +1,6 @@
 #include "stdint.h"
 #include "stdio.h"
 #include "stdlib.h"
-#include "syscall.h"
-#include "test_util.h"
 
 #define SEM_ID 67
 #define TOTAL_PAIR_PROCESSES 2

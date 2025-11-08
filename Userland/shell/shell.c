@@ -30,6 +30,7 @@ int arg_count = 0;
 extern command clear_cmd;
 extern command help_cmd;
 extern command test_sync_cmd;
+extern command test_processes_cmd;
 extern command ps_cmd;
 extern command test_pipes_cmd;
 
@@ -48,6 +49,7 @@ command *all_commands[] = {
     &clear_cmd,
     &help_cmd,
     &test_sync_cmd,
+    &test_processes_cmd,
     &ps_cmd,
     &test_pipes_cmd,
     &loop_cmd,

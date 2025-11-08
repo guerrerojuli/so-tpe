@@ -20,6 +20,7 @@ extern int arg_count;
 extern command clear_cmd;
 extern command help_cmd;
 extern command test_sync_cmd;
+extern command test_processes_cmd;
 extern command ps_cmd;
 extern command test_pipes_cmd;
 extern command loop_cmd;
