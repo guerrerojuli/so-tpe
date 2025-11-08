@@ -53,6 +53,7 @@ command *all_commands[] = {
     &nice_cmd,
     &block_cmd,
     &wc_cmd,
+    &cat_cmd,
     &mem_cmd,
     NULL // Terminator
 };

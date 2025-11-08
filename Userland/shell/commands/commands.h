@@ -27,6 +27,7 @@ extern command kill_cmd;
 extern command nice_cmd;
 extern command block_cmd;
 extern command wc_cmd;
+extern command cat_cmd;
 extern command mem_cmd;
 
 // Array de todos los comandos (definido en shell.c)
