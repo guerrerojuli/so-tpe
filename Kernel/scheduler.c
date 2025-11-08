@@ -26,10 +26,10 @@ typedef struct
 static Scheduler scheduler;
 
 // Calculate base quantum for a given priority
-// Priority 4 -> 4, Priority 3 -> 8, Priority 2 -> 16, Priority 1 -> 32, Priority 0 -> 64
+// Priority 4 (highest) -> 64, Priority 3 -> 32, Priority 2 -> 16, Priority 1 -> 8, Priority 0 (lowest) -> 4
 static int16_t calculate_base_quantum(uint8_t priority)
 {
-    return 4 * (1 << (NUM_PRIORITIES - 1 - priority));
+    return 4 * (1 << priority);
 }
 
 // Calculate adjusted quantum based on I/O bound behavior
@@ -210,11 +210,18 @@ int8_t set_status(uint16_t pid, ProcessStatus new_status)
             update_io_bound_status(process, quantum_used, scheduler.initial_quantum);
         }
 
+        // Demote priority - I/O-bound processes move DOWN to lower priorities
+        uint8_t old_priority = process->priority;
+        if (process->priority > 0)
+        {
+            process->priority--;
+        }
+
         // Reset quantum consumption counter when blocking (I/O activity)
         process->quantum_consumed_count = 0;
 
-        // Move to blocked queue
-        list_remove(&scheduler.ready_queues[process->priority], node);
+        // Move to blocked queue (remove from old priority queue)
+        list_remove(&scheduler.ready_queues[old_priority], node);
         node = list_append(&scheduler.blocked_queue, process);
         scheduler.processes[pid] = node;
     }
@@ -326,6 +333,12 @@ void yield()
         int16_t quantum_used = scheduler.initial_quantum - scheduler.remaining_quantum;
         update_io_bound_status(current_process, quantum_used, scheduler.initial_quantum);
 
+        // Demote priority - I/O-bound processes move DOWN to lower priorities
+        if (current_process->priority > 0)
+        {
+            set_priority(scheduler.current_pid, current_process->priority - 1);
+        }
+
         // Reset quantum consumption counter on voluntary yield (indicates I/O activity)
         current_process->quantum_consumed_count = 0;
     }
@@ -393,14 +406,14 @@ void *schedule(void *current_rsp)
                 // Increment quantum consumption counter
                 current_process->quantum_consumed_count++;
 
-                // Delayed priority aging - only age if threshold is reached
-                if (current_process->quantum_consumed_count >= AGING_THRESHOLD && current_process->priority > 0)
+                // Delayed priority promotion - CPU-bound processes move UP to higher priorities
+                if (current_process->quantum_consumed_count >= AGING_THRESHOLD && current_process->priority < NUM_PRIORITIES - 1)
                 {
-                    uint8_t new_priority = current_process->priority - 1;
+                    uint8_t new_priority = current_process->priority + 1;
                     set_priority(scheduler.current_pid, new_priority);
                     rotated = 1;  // set_priority rotates the process
 
-                    // Reset counter after aging
+                    // Reset counter after promotion
                     current_process->quantum_consumed_count = 0;
                 }
             }
