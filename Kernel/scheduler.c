@@ -20,6 +20,7 @@ typedef struct
     int16_t initial_quantum;   // Quantum assigned at start of time slice
     uint8_t kill_fg_flag;      // Flag to kill foreground process (Ctrl+C)
     uint16_t foreground_pid;    // PID of the current foreground process (0 = none)
+    uint8_t current_priority_level; // Current priority level for round-robin rotation
 } Scheduler;
 
 static Scheduler scheduler;
@@ -89,20 +90,32 @@ void scheduler_init()
     scheduler.num_processes = 0;
     scheduler.remaining_quantum = 1;
     scheduler.foreground_pid = 0;  // No foreground process initially
+    scheduler.current_priority_level = NUM_PRIORITIES - 1;  // Start at highest priority
 }
 
-// Find highest priority ready process
+// Find next ready process using round-robin priority rotation
 static uint16_t get_next_pid()
 {
-    for (int lvl = NUM_PRIORITIES - 1; lvl >= 0; lvl--)
+    // Try all priority levels starting from current_priority_level
+    for (int i = 0; i < NUM_PRIORITIES; i++)
     {
+        int lvl = scheduler.current_priority_level;
+
         if (!list_is_empty(&scheduler.ready_queues[lvl]))
         {
             Node *node = list_get_first(&scheduler.ready_queues[lvl]);
             Process *process = (Process *)node->data;
+
+            // Rotate to next priority level for next scheduling decision (4->3->2->1->0->4)
+            scheduler.current_priority_level = (scheduler.current_priority_level - 1 + NUM_PRIORITIES) % NUM_PRIORITIES;
+
             return process->pid;
         }
+
+        // Move to next priority level
+        scheduler.current_priority_level = (scheduler.current_priority_level - 1 + NUM_PRIORITIES) % NUM_PRIORITIES;
     }
+
     return IDLE_PID;
 }
 
