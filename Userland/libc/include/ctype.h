@@ -7,5 +7,6 @@ int isSpace(char c);
 int isLower(char c);
 int isUpper(char c);
 int isAlnum(char c);
+char tolower(char c);
 
 #endif /* _CTYPE_H */

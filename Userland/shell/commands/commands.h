@@ -28,6 +28,7 @@ extern command nice_cmd;
 extern command block_cmd;
 extern command wc_cmd;
 extern command mem_cmd;
+extern command filter_cmd;
 
 // Array de todos los comandos (definido en shell.c)
 extern command *all_commands[];

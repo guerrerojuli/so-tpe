@@ -18,3 +18,8 @@ int isUpper(char c){
 int isAlnum(char c){
     return isAlpha(c) || isDigit(c);
 }
+char tolower(char c){
+    if (c >= 'A' && c <= 'Z')
+        return c + ('a' - 'A');
+    return c;
+}
