@@ -259,6 +259,26 @@ int32_t kill_process(uint16_t pid, int32_t retval)
         list_remove(&scheduler.ready_queues[process->priority], node);
     }
 
+    // Cascade cleanup: destroy all zombie children before this process becomes zombie
+    while (!list_is_empty(&process->zombie_children))
+    {
+        Node *zombie_node = list_get_first(&process->zombie_children);
+        Process *zombie_child = (Process *)zombie_node->data;
+        uint16_t zombie_pid = zombie_child->pid;
+
+        // Remove from parent's zombie list
+        list_remove(&process->zombie_children, zombie_node);
+
+        // Remove from main process table
+        scheduler.processes[zombie_pid] = NULL;
+        scheduler.num_processes--;
+
+        // Free zombie child resources
+        free_process(zombie_child);
+        mm_free(zombie_child);
+        mm_free(zombie_node);
+    }
+
     process->status = ZOMBIE;
     process->return_value = retval;
 
@@ -281,17 +301,40 @@ int32_t kill_process(uint16_t pid, int32_t retval)
         scheduler.foreground_pid = 0;
     }
 
-    // Check if parent is waiting for this process
+    // Handle zombie based on parent status
     uint16_t parent_pid = process->parent_pid;
     if (parent_pid < MAX_PROCESSES && scheduler.processes[parent_pid] != NULL)
     {
         Process *parent = (Process *)scheduler.processes[parent_pid]->data;
 
-        // If parent is waiting for this specific child, unblock it
-        if (parent->waiting_for_pid == pid && parent->status == BLOCKED)
+        // If parent is alive (not a zombie), add to parent's zombie children list
+        if (parent->status != ZOMBIE)
         {
-            set_status(parent_pid, READY);
+            // Add zombie to parent's zombie_children list
+            list_append(&parent->zombie_children, process);
+
+            // If parent is waiting for this specific child, unblock it
+            if (parent->waiting_for_pid == pid && parent->status == BLOCKED)
+            {
+                set_status(parent_pid, READY);
+            }
         }
+        else
+        {
+            // Parent is zombie - auto-reap this orphan
+            scheduler.processes[pid] = NULL;
+            scheduler.num_processes--;
+            free_process(process);
+            mm_free(node);
+        }
+    }
+    else
+    {
+        // Parent doesn't exist - auto-reap this orphan
+        scheduler.processes[pid] = NULL;
+        scheduler.num_processes--;
+        free_process(process);
+        mm_free(node);
     }
 
     // If current process is dying, force context switch
@@ -468,7 +511,21 @@ int32_t waitpid(uint16_t pid)
     // Child is zombie, collect return value
     int32_t retval = child_process->return_value;
 
-    // Clean up zombie process
+    // Remove zombie from parent's zombie_children list
+    Node *zombie_node = list_get_first(&parent->zombie_children);
+    while (zombie_node != NULL)
+    {
+        Process *zombie = (Process *)zombie_node->data;
+        if (zombie->pid == pid)
+        {
+            list_remove(&parent->zombie_children, zombie_node);
+            mm_free(zombie_node);
+            break;
+        }
+        zombie_node = zombie_node->next;
+    }
+
+    // Clean up zombie process from main table
     scheduler.processes[pid] = NULL;
     scheduler.num_processes--;
     free_process(child_process);

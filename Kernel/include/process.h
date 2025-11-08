@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "globals.h"
+#include "list.h"
 
 #define PROCESS_STACK_SIZE 4096  // 4KB per process
 
@@ -28,6 +29,7 @@ typedef struct Process {
     
     // Wait support
     uint16_t waiting_for_pid;         // PID this process is waiting for (0 if not waiting)
+    List zombie_children;             // List of this process's zombie children
 } Process;
 
 // Process management

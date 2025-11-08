@@ -5,6 +5,7 @@
 #include "include/lib.h"
 #include "include/pipe.h"
 #include "include/globals.h"
+#include "include/list.h"
 #include <stddef.h>
 
 extern void *_initialize_stack_frame(void *wrapper, void *code, void *stack_top, void *args);
@@ -66,6 +67,7 @@ void init_process(Process *process, uint16_t pid, uint16_t parent_pid,
     
     // Initialize wait fields
     process->waiting_for_pid = 0;
+    list_init(&process->zombie_children);
 
     // Allocate stack (4KB)
     process->stack_base = mm_alloc(4096);
