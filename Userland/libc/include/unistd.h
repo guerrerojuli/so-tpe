@@ -59,6 +59,7 @@ uint64_t sys_mem_state(uint64_t total_ptr, uint64_t free_ptr, uint64_t used_ptr,
 
 // Time syscalls
 uint64_t sys_sleep(uint64_t seconds);
+uint64_t sys_get_ticks(void);
 
 // Convenience wrapper for sleep
 static inline void sleep(int seconds) {

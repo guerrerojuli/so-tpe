@@ -30,6 +30,7 @@ extern command wc_cmd;
 extern command cat_cmd;
 extern command mem_cmd;
 extern command filter_cmd;
+extern command mvar_cmd;
 
 // Array de todos los comandos (definido en shell.c)
 extern command *all_commands[];

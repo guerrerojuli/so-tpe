@@ -21,6 +21,7 @@ GLOBAL sys_pipe_get
 GLOBAL sys_get_process_info
 GLOBAL sys_sleep
 GLOBAL sys_mem_state
+GLOBAL sys_get_ticks
 
 section .text
 
@@ -60,6 +61,7 @@ section .text
 ; SYSCALL_GET_PROCESS_INFO = 22
 ; SYSCALL_SLEEP = 23
 ; SYSCALL_UNBLOCK = 24
+; SYSCALL_GET_TICKS = 25
 
 sys_read:
     syscall 0
@@ -129,4 +131,7 @@ sys_get_process_info:
 
 sys_sleep:
     syscall 23
+
+sys_get_ticks:
+    syscall 25
 

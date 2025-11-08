@@ -41,6 +41,7 @@ extern command block_cmd;
 extern command wc_cmd;
 extern command mem_cmd;
 extern command filter_cmd;
+extern command mvar_cmd;
 
 // Array of all commands
 command *all_commands[] = {
@@ -57,6 +58,7 @@ command *all_commands[] = {
     &cat_cmd,
     &mem_cmd,
     &filter_cmd,
+    &mvar_cmd,
     NULL // Terminator
 };
 

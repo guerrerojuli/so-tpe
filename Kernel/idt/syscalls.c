@@ -289,3 +289,8 @@ uint64_t sys_sleep(uint64_t seconds, uint64_t _unused1, uint64_t _unused2, uint6
 
     return 0;
 }
+
+uint64_t sys_get_ticks(uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5, uint64_t _unused6)
+{
+    return (uint64_t)ticks_elapsed();
+}
