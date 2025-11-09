@@ -31,6 +31,7 @@ extern command clear_cmd;
 extern command help_cmd;
 extern command test_sync_cmd;
 extern command test_processes_cmd;
+extern command test_mm_cmd;
 extern command ps_cmd;
 extern command test_pipes_cmd;
 
@@ -50,6 +51,7 @@ command *all_commands[] = {
     &help_cmd,
     &test_sync_cmd,
     &test_processes_cmd,
+    &test_mm_cmd,
     &ps_cmd,
     &test_pipes_cmd,
     &loop_cmd,

@@ -1,6 +1,8 @@
 #include "stdlib.h"
 #include "ctype.h"
 #include "unistd.h"
+#include "stdint.h"
+#include "stddef.h"
 
 void exit(int status)
 {
@@ -74,4 +76,16 @@ int rand(void)
 
     rand_state = rand_state * 1103515245 + 12345;
     return (int)((rand_state / 65536) % 32768);
+}
+
+void *malloc(uint32_t size)
+{
+    return (void *)sys_malloc((uint64_t)size);
+}
+
+void free(void *ptr)
+{
+    if (ptr != NULL) {
+        sys_free((uint64_t)ptr);
+    }
 }

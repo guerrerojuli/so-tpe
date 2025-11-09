@@ -8,6 +8,8 @@ GLOBAL sys_yield
 GLOBAL sys_set_priority
 GLOBAL sys_block
 GLOBAL sys_unblock
+GLOBAL sys_malloc
+GLOBAL sys_free
 GLOBAL sys_sem_init
 GLOBAL sys_sem_open
 GLOBAL sys_sem_close
@@ -89,6 +91,12 @@ sys_clear_text_buffer:
 
 sys_block:
     syscall 8
+
+sys_malloc:
+    syscall 9
+
+sys_free:
+    syscall 10
 
 sys_mem_state:
     syscall 11

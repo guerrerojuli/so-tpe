@@ -54,6 +54,10 @@ int16_t sys_pipe_get(void);
 // Process info syscalls
 int64_t sys_get_process_info(ProcessInfo *info_array, uint64_t max_count);
 
+// Memory management syscalls
+uint64_t sys_malloc(uint64_t size);
+uint64_t sys_free(uint64_t ptr);
+
 // Memory info syscalls
 uint64_t sys_mem_state(uint64_t total_ptr, uint64_t free_ptr, uint64_t used_ptr, uint64_t name_ptr);
 
