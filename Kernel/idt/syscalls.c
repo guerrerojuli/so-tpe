@@ -8,6 +8,7 @@
 #include <lib.h>
 #include <pipe.h>
 #include <time.h>
+#include <rtc.h>
 
 // I/O syscalls
 uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3)
@@ -278,13 +279,28 @@ uint64_t sys_get_process_info(uint64_t info_array_ptr, uint64_t max_count, uint6
 
 uint64_t sys_sleep(uint64_t seconds, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
 {
-    // Calculate target ticks (18 ticks per second)
-    uint64_t ticks_to_wait = seconds * 18;
-    uint64_t target_ticks = ticks_elapsed() + ticks_to_wait;
+    // Use RTC (Real-Time Clock) for accurate timing, independent of tick rate
+    // This works correctly even when yield() triggers timer interrupts
+    uint32_t start_seconds = rtc_get_seconds();
+    uint32_t target_seconds = start_seconds + (uint32_t)seconds;
+
+    // Handle midnight rollover: RTC seconds go from 0-86399 (24 hours)
+    if (target_seconds >= 86400) {
+        target_seconds -= 86400;
+    }
 
     // Yield CPU until target time is reached
-    while (ticks_elapsed() < target_ticks) {
-        yield();  // Give up CPU to other processes
+    // Handle both normal case and midnight rollover
+    if (target_seconds > start_seconds) {
+        // Normal case: just wait until we reach target
+        while (rtc_get_seconds() < target_seconds) {
+            yield();
+        }
+    } else {
+        // Midnight rollover: wait until we pass midnight and reach target
+        while (rtc_get_seconds() >= start_seconds || rtc_get_seconds() < target_seconds) {
+            yield();
+        }
     }
 
     return 0;

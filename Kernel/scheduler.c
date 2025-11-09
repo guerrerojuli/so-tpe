@@ -387,7 +387,7 @@ void yield()
     }
 
     scheduler.remaining_quantum = 0;
-    __asm__ volatile("int $0x81"); // Force context switch (not timer interrupt!)
+    __asm__ volatile("int $0x20"); // Use timer interrupt to ensure EOI is sent
 }
 
 void *schedule(void *current_rsp)
