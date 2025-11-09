@@ -12,6 +12,7 @@ all: $(MODULE)
 
 $(MODULE): $(HEADERS) $(SOURCES) $(ASM_OBJECTS) $(LIBC_OBJECTS)
 	$(GCC) $(GCCFLAGS) -I$(LIBC_DIR)/include -I../SampleCodeModule/include -fno-builtin -T shell.ld _loader.c $(SOURCES) $(ASM_OBJECTS) $(LIBC_OBJECTS) -o ../$(MODULE)
+	$(GCC) $(GCCFLAGS) -no-pie -I$(LIBC_DIR)/include -I../SampleCodeModule/include -fno-builtin -T shell.ld -Wl,--oformat=elf64-x86-64 _loader.c $(SOURCES) $(ASM_OBJECTS) $(LIBC_OBJECTS) -o ../shell.elf
 
 %.o: %.asm
 	nasm -felf64 $< -o $@
