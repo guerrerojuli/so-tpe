@@ -36,8 +36,5 @@ int kill_main(int argc, char **argv) {
 command kill_cmd = {
     "kill",
     kill_main,
-    "Kill a process by PID",
-    "Usage: kill <pid>\n"
-    "Terminates the process with the specified PID.\n"
-    "Example: kill 5\n"
+    "Kill a process by PID"
 };

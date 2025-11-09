@@ -9,7 +9,6 @@ typedef struct
     char *name;
     int (*func)(int argc, char **argv);  // Changed to match MainFunction signature
     char *description;
-    char *manual;
 } command;
 
 // Variables globales para parsear comandos (definidas en shell.c)
@@ -19,10 +18,10 @@ extern int arg_count;
 // Declaraciones de funciones de comandos
 extern command clear_cmd;
 extern command help_cmd;
-extern command test_sync_cmd;
+extern command test_synchro_cmd;
+extern command test_no_synchro_cmd;
 extern command test_processes_cmd;
 extern command ps_cmd;
-extern command test_pipes_cmd;
 extern command loop_cmd;
 extern command kill_cmd;
 extern command nice_cmd;

@@ -29,11 +29,11 @@ int arg_count = 0;
 // Import existing commands
 extern command clear_cmd;
 extern command help_cmd;
-extern command test_sync_cmd;
+extern command test_synchro_cmd;
+extern command test_no_synchro_cmd;
 extern command test_processes_cmd;
 extern command test_mm_cmd;
 extern command ps_cmd;
-extern command test_pipes_cmd;
 
 // Import new commands
 extern command loop_cmd;
@@ -49,11 +49,11 @@ extern command mvar_cmd;
 command *all_commands[] = {
     &clear_cmd,
     &help_cmd,
-    &test_sync_cmd,
+    &test_synchro_cmd,
+    &test_no_synchro_cmd,
     &test_processes_cmd,
     &test_mm_cmd,
     &ps_cmd,
-    &test_pipes_cmd,
     &loop_cmd,
     &kill_cmd,
     &nice_cmd,

@@ -50,8 +50,5 @@ static int loop_func(int argc, char **argv) {
 command loop_cmd = {
     "loop",
     loop_func,
-    "Print PID every N seconds",
-    "Usage: loop <seconds>\n"
-    "Prints process ID and a greeting every N seconds.\n"
-    "Can be run in background with: loop 5 &\n"
+    "Print PID every N seconds"
 };

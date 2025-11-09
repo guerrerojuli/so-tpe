@@ -85,11 +85,5 @@ int block_main(int argc, char **argv) {
 command block_cmd = {
     "block",
     block_main,
-    "Toggle process block state",
-    "Usage: block <pid>\n"
-    "Toggles a process between BLOCKED and READY states.\n"
-    "If the process is READY or RUNNING, it will be blocked.\n"
-    "If the process is BLOCKED, it will be unblocked.\n"
-    "Note: Cannot block/unblock the idle process (PID 0) or zombie processes.\n"
-    "Example: block 3  (toggles block state of process 3)\n"
+    "Toggle process block state"
 };

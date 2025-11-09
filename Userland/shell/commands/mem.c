@@ -58,12 +58,5 @@ static int mem_func(int argc, char **argv) {
 command mem_cmd = {
     "mem",
     mem_func,
-    "Display memory state",
-    "Usage: mem\n"
-    "Displays the current state of memory management including:\n"
-    "  - Memory manager type (First-Fit or Buddy System)\n"
-    "  - Total memory available\n"
-    "  - Used memory\n"
-    "  - Free memory\n"
-    "All values are shown in bytes, KB, and MB for convenience.\n"
+    "Display memory state"
 };

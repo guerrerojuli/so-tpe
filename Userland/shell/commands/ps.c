@@ -157,24 +157,6 @@ static int ps_func(int argc, char **argv)
 command ps_cmd = {
     "ps",
     ps_func,
-    "List all processes with their properties",
-    "PS(1)                       User Commands                       PS(1)\n\n"
-    "NAME\n"
-    "       ps - report process status\n\n"
-    "SYNOPSIS\n"
-    "       ps\n\n"
-    "DESCRIPTION\n"
-    "       Display information about all active processes in the system.\n"
-    "       Shows process ID (PID), parent process ID (PPID), process name,\n"
-    "       priority level, current status, foreground/background flag,\n"
-    "       stack base pointer, and current stack pointer.\n\n"
-    "FIELDS\n"
-    "       PID      Process ID\n"
-    "       PPID     Parent Process ID\n"
-    "       NAME     Process name\n"
-    "       PRIORITY Process priority (0-4, higher is more priority)\n"
-    "       STATUS   Current process state (READY/RUNNING/BLOCKED/ZOMBIE)\n"
-    "       FG       Foreground flag (Y/N)\n"
-    "       STACK_BASE   Base address of process stack\n"
-    "       STACK_POS    Current stack pointer position\n\n"};
+    "List all processes with their properties"
+};
 

@@ -9,15 +9,7 @@ static int clear_func(int argc, char **argv) {
 }
 
 command clear_cmd = {
-    "clear", 
-    clear_func, 
-    "Clears the screen", 
-    "CLEAR(1)                    User Commands                    CLEAR(1)\n\n"
-    "NAME\n"
-    "       clear - clear the terminal screen\n\n"
-    "SYNOPSIS\n"
-    "       clear\n\n"
-    "DESCRIPTION\n"
-    "       Clear the terminal screen using ANSI escape sequences.\n"
-    "       This command does not take any arguments.\n\n"
+    "clear",
+    clear_func,
+    "Clears the screen"
 }; 

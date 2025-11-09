@@ -57,14 +57,5 @@ int nice_main(int argc, char **argv) {
 command nice_cmd = {
     "nice",
     nice_main,
-    "Change process priority",
-    "Usage: nice <pid> <priority>\n"
-    "Changes the priority of the specified process.\n"
-    "Priority levels:\n"
-    "  0 - Lowest priority (long quantum, runs rarely)\n"
-    "  1 - Low priority\n"
-    "  2 - Normal priority\n"
-    "  3 - High priority\n"
-    "  4 - Highest priority (short quantum, runs frequently)\n"
-    "Example: nice 3 4  (sets process 3 to highest priority)\n"
+    "Change process priority"
 };

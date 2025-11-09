@@ -12,15 +12,7 @@ static int help_func(int argc, char **argv) {
 }
 
 command help_cmd = {
-    "help", 
-    help_func, 
-    "Shows this help message",
-    "HELP(1)                     User Commands                     HELP(1)\n\n"
-    "NAME\n"
-    "       help - display available commands\n\n"
-    "SYNOPSIS\n"
-    "       help\n\n"
-    "DESCRIPTION\n"
-    "       Display a list of all available commands with brief descriptions.\n"
-    "       For detailed information about a specific command, use 'man <command>'.\n\n"
+    "help",
+    help_func,
+    "Shows this help message"
 }; 

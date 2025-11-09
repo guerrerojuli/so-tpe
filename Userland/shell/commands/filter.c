@@ -28,24 +28,5 @@ static int filter_func(int argc, char **argv)
 command filter_cmd = {
     "filter",
     filter_func,
-    "Filter vowels from stdin",
-    "FILTER(1)                   User Commands                   FILTER(1)\n\n"
-    "NAME\n"
-    "       filter - filter vowels from input\n\n"
-    "SYNOPSIS\n"
-    "       filter\n\n"
-    "DESCRIPTION\n"
-    "       Reads from standard input and outputs only vowel characters.\n"
-    "       Both uppercase and lowercase vowels (A, E, I, O, U, a, e, i, o, u)\n"
-    "       are recognized and passed through, preserving their original case.\n"
-    "       All other characters (consonants, digits, symbols, spaces) are\n"
-    "       filtered out. Reading stops when EOF is received (pipe closes or\n"
-    "       Ctrl+D). A newline is added at the end of the output.\n\n"
-    "EXAMPLES\n"
-    "       echo \"Hello World\" | filter    # Output: \"eoo\"\n"
-    "       echo \"AEIOU123\" | filter       # Output: \"AEIOU\"\n"
-    "       loop 1 | filter                 # Filter vowels from loop output\n\n"
-    "NOTES\n"
-    "       - Commonly used in pipes to extract vowels from text\n"
-    "       - Preserves the case of vowels (uppercase/lowercase)\n"
-    "       - Returns when the writer closes the pipe (EOF)\n\n"};
+    "Filter vowels from stdin"
+};
