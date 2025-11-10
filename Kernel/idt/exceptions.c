@@ -43,8 +43,8 @@ void exceptionDispatcher(int exception, const registers_t *gpr_regs)
 
 	// Modificar tanto RIP como RSP para reiniciar el shell limpiamente
 	registers_t *modifiable_regs = (registers_t *)gpr_regs;
-	modifiable_regs->rip = SHELL_CODE_START; // Apuntar al inicio del shell
-	modifiable_regs->rsp = getStackBase();	 // Stack limpio para el shell
+	modifiable_regs->rip = (uint64_t)SHELL_CODE_START; // Apuntar al inicio del shell
+	modifiable_regs->rsp = (uint64_t)getStackBase();	 // Stack limpio para el shell
 
 	// Limpiar algunos registros importantes para tener un estado inicial limpio
 	modifiable_regs->rax = 0;

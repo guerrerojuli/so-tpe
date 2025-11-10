@@ -11,8 +11,9 @@
 #include <rtc.h>
 
 // I/O syscalls
-uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3)
+uint64_t sys_read(uint64_t fd, uint64_t buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3)
 {
+    char *buffer = (char *)buf;
     // Get actual file descriptor from process's FD table
     int16_t actual_fd = get_process_fd((uint8_t)fd);
 
@@ -28,7 +29,7 @@ uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uin
 
     // Check if it's a pipe
     if (actual_fd >= BUILT_IN_DESCRIPTORS) {
-        return pipe_read((uint16_t)actual_fd, buf, count);
+        return pipe_read((uint16_t)actual_fd, buffer, count);
     }
 
     // Handle DEV_NULL
@@ -43,10 +44,10 @@ uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uin
         for (i = 0; i < count; i++)
         {
             // Use blocking read - will wait until a character is available
-            buf[i] = getCharBlocking();
+            buffer[i] = getCharBlocking();
 
             // Check if we got EOF (Ctrl+D returns -1)
-            if ((int8_t)buf[i] == -1) {
+            if ((int8_t)buffer[i] == -1) {
                 // Return immediately with bytes read including EOF
                 return i + 1;
             }
@@ -57,8 +58,9 @@ uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uin
     }
 }
 
-uint64_t sys_write(uint64_t fd, const char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3)
+uint64_t sys_write(uint64_t fd, uint64_t buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3)
 {
+    const char *buffer = (const char *)buf;
     // Get actual file descriptor from process's FD table
     int16_t actual_fd = get_process_fd((uint8_t)fd);
 
@@ -74,7 +76,7 @@ uint64_t sys_write(uint64_t fd, const char *buf, uint64_t count, uint64_t _unuse
 
     // Check if it's a pipe
     if (actual_fd >= BUILT_IN_DESCRIPTORS) {
-        return pipe_write(get_pid(), (uint16_t)actual_fd, buf, count);
+        return pipe_write(get_pid(), (uint16_t)actual_fd, buffer, count);
     }
 
     // Handle DEV_NULL
@@ -85,10 +87,10 @@ uint64_t sys_write(uint64_t fd, const char *buf, uint64_t count, uint64_t _unuse
     switch (actual_fd)
     {
     case STDOUT:
-        console_write(buf, count, 0xFFFFFF);
+        console_write(buffer, count, 0xFFFFFF);
         return count;
     case STDERR:
-        console_write(buf, count, 0xFF0000);
+        console_write(buffer, count, 0xFF0000);
         return count;
     default:
         return 0;

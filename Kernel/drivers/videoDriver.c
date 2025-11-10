@@ -65,7 +65,7 @@ static uint8_t *back_buffer = static_back_buffer;
 
 void swap_buffers(void)
 {
-    uint8_t *framebuffer = (uint8_t *)VBE_mode_info->framebuffer;
+    uint8_t *framebuffer = (uint8_t *)(uint64_t)VBE_mode_info->framebuffer;
     uint64_t buffer_size = VBE_mode_info->width * VBE_mode_info->height * 3;
 
     // Fast memory copy of entire buffer using memcpy

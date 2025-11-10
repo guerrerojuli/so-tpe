@@ -10,7 +10,7 @@ void __attribute__((noreturn)) __stack_chk_fail(void)
 {
 	// Print a message to the console
 	char error_msg[] = "*** KERNEL PANIC: Stack corruption detected! System halted ***\n";
-	sys_write(2, error_msg, sizeof(error_msg) - 1, 0, 0, 0);
+	sys_write(2, (uint64_t)error_msg, sizeof(error_msg) - 1, 0, 0, 0);
 	// Halt the CPU in an infinite loop
 	while (1)
 	{

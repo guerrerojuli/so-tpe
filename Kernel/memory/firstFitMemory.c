@@ -139,7 +139,7 @@ int k_heapLCABAddBlock(KHEAPLCAB *heap, uintptr_t addr, uint32_t size) {
  */
 void* k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size) {
     KHEAPBLOCKLCAB *hb;
-    KHEAPHDRLCAB *hdr, *_hdr, *phdr;
+    KHEAPHDRLCAB *hdr, *_hdr;
     uint32_t sz;
     uint8_t fg;
     uint32_t checks = 0;
@@ -153,7 +153,6 @@ void* k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size) {
 
             // Start at the first chunk in this block
             hdr = (KHEAPHDRLCAB*)&hb[1];
-            phdr = 0;  // Previous header (used for traversal)
 
             // Walk through all chunks in this block
             while ((uintptr_t)hdr < ((uintptr_t)hb + hb->size)) {
@@ -196,7 +195,6 @@ void* k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size) {
                 }
 
                 // Move to the next chunk
-                phdr = hdr;
                 hdr = (KHEAPHDRLCAB*)((uintptr_t)&hdr[1] + sz);
             }
         }
@@ -229,7 +227,6 @@ void k_heapLCABFree(KHEAPLCAB *heap, void *ptr) {
     KHEAPHDRLCAB *hdr, *phdr, *nhdr;
     KHEAPBLOCKLCAB *hb;
     uint32_t sz;
-    uint8_t fg;
 
     // Find which block contains this pointer
     for (hb = heap->fblock; hb; hb = hb->next) {

@@ -33,8 +33,8 @@
 #define SYSCALL_GET_TICKS 25
 
 // I/O syscalls
-uint64_t sys_read(uint64_t fd, char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3);
-uint64_t sys_write(uint64_t fd, const char *buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3);
+uint64_t sys_read(uint64_t fd, uint64_t buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3);
+uint64_t sys_write(uint64_t fd, uint64_t buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3);
 uint64_t sys_clear_text_buffer_wrapper(uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5, uint64_t _unused6);
 
 // Process management syscalls
