@@ -267,7 +267,7 @@ int32_t kill_process(uint16_t pid, int32_t retval)
         uint16_t zombie_pid = zombie_child->pid;
 
         // Remove from parent's zombie list
-        list_remove(&process->zombie_children, zombie_node);
+        list_remove(&process->zombie_children, zombie_node);  // This already frees zombie_node
 
         // Remove from main process table
         scheduler.processes[zombie_pid] = NULL;
@@ -275,8 +275,7 @@ int32_t kill_process(uint16_t pid, int32_t retval)
 
         // Free zombie child resources
         free_process(zombie_child);
-        mm_free(zombie_child);
-        mm_free(zombie_node);
+        mm_free(zombie_child);  // Free the Process structure
     }
 
     process->status = ZOMBIE;
@@ -325,6 +324,7 @@ int32_t kill_process(uint16_t pid, int32_t retval)
             scheduler.processes[pid] = NULL;
             scheduler.num_processes--;
             free_process(process);
+            mm_free(process);  // Free the Process structure itself
             mm_free(node);
         }
     }
@@ -334,6 +334,7 @@ int32_t kill_process(uint16_t pid, int32_t retval)
         scheduler.processes[pid] = NULL;
         scheduler.num_processes--;
         free_process(process);
+        mm_free(process);  // Free the Process structure itself
         mm_free(node);
     }
 
@@ -518,8 +519,7 @@ int32_t waitpid(uint16_t pid)
         Process *zombie = (Process *)zombie_node->data;
         if (zombie->pid == pid)
         {
-            list_remove(&parent->zombie_children, zombie_node);
-            mm_free(zombie_node);
+            list_remove(&parent->zombie_children, zombie_node);  // This already frees zombie_node
             break;
         }
         zombie_node = zombie_node->next;
@@ -529,6 +529,7 @@ int32_t waitpid(uint16_t pid)
     scheduler.processes[pid] = NULL;
     scheduler.num_processes--;
     free_process(child_process);
+    mm_free(child_process);  // Free the Process structure itself
     mm_free(child_node);
 
     // Clear waiting state and foreground status

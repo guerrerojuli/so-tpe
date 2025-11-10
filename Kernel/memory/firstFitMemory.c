@@ -5,6 +5,7 @@
  */
 #include <stdint.h>
 #include "../include/lib.h"
+#include <stddef.h>
 
 /*
  * KHEAPFLAG_USED - Flag to mark a chunk as used
@@ -338,12 +339,15 @@ void mm_init(uintptr_t start, uint32_t size) {
 }
 
 void mm_get_stats(uint64_t *total, uint64_t *free) {
-    if (kernel_heap.fblock) {
-        *total = kernel_heap.fblock->size;
-        *free = kernel_heap.fblock->size - kernel_heap.fblock->used;
-    } else {
-        *total = 0;
-        *free = 0;
+    *total = 0;
+    *free = 0;
+
+    // Iterate through all blocks in the linked list
+    KHEAPBLOCKLCAB *block = kernel_heap.fblock;
+    while (block != NULL) {
+        *total += block->size;
+        *free += (block->size - block->used);
+        block = block->next;
     }
 }
 
