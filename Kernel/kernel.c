@@ -67,11 +67,6 @@ void *initializeKernelBinary()
 KHEAPLCAB kernel_heap;
 #endif
 
-#ifdef BUDDY
-zone_t buddy_zone;
-page_t buddy_pages[2048];
-#endif
-
 void initializeMemoryManagers()
 {
 	uintptr_t heapStart = (uintptr_t)getStackBase();
@@ -108,7 +103,7 @@ int main()
 
 	// Enable interrupts and start scheduling
 	_sti();
-	yield();  // Start first context switch
+	yield(); // Start first context switch
 
 	// Should never reach here
 	return 0;

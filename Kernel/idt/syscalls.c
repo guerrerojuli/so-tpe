@@ -20,23 +20,27 @@ uint64_t sys_read(uint64_t fd, uint64_t buf, uint64_t count, uint64_t _unused1, 
     int16_t actual_fd = get_process_fd((uint8_t)fd);
 
     // If the process doesn't have this FD (shouldn't happen), fail
-    if (actual_fd == -1 && fd < 3) {
+    if (actual_fd == -1 && fd < 3)
+    {
         return 0;
     }
 
     // For FDs >= 3, they're direct pipe descriptors, not indirected
-    if (fd >= 3) {
+    if (fd >= 3)
+    {
         actual_fd = (int16_t)fd;
     }
 
     // Check if it's a pipe
-    if (actual_fd >= BUILT_IN_DESCRIPTORS) {
+    if (actual_fd >= BUILT_IN_DESCRIPTORS)
+    {
         return pipe_read((uint16_t)actual_fd, buffer, count);
     }
 
     // Handle DEV_NULL
-    if (actual_fd == DEV_NULL) {
-        return 0;  // Reading from DEV_NULL returns EOF immediately
+    if (actual_fd == DEV_NULL)
+    {
+        return 0; // Reading from DEV_NULL returns EOF immediately
     }
 
     switch (actual_fd)
@@ -49,7 +53,8 @@ uint64_t sys_read(uint64_t fd, uint64_t buf, uint64_t count, uint64_t _unused1, 
             buffer[i] = getCharBlocking();
 
             // Check if we got EOF (Ctrl+D returns -1)
-            if ((int8_t)buffer[i] == -1) {
+            if ((int8_t)buffer[i] == -1)
+            {
                 // Return immediately with bytes read including EOF
                 return i + 1;
             }
@@ -67,23 +72,27 @@ uint64_t sys_write(uint64_t fd, uint64_t buf, uint64_t count, uint64_t _unused1,
     int16_t actual_fd = get_process_fd((uint8_t)fd);
 
     // If the process doesn't have this FD (shouldn't happen), fail
-    if (actual_fd == -1 && fd < 3) {
+    if (actual_fd == -1 && fd < 3)
+    {
         return 0;
     }
 
     // For FDs >= 3, they're direct pipe descriptors, not indirected
-    if (fd >= 3) {
+    if (fd >= 3)
+    {
         actual_fd = (int16_t)fd;
     }
 
     // Check if it's a pipe
-    if (actual_fd >= BUILT_IN_DESCRIPTORS) {
+    if (actual_fd >= BUILT_IN_DESCRIPTORS)
+    {
         return pipe_write(get_pid(), (uint16_t)actual_fd, buffer, count);
     }
 
     // Handle DEV_NULL
-    if (actual_fd == DEV_NULL) {
-        return count;  // Discard all output, pretend we wrote it
+    if (actual_fd == DEV_NULL)
+    {
+        return count; // Discard all output, pretend we wrote it
     }
 
     switch (actual_fd)
@@ -168,7 +177,7 @@ uint64_t sys_malloc(uint64_t size, uint64_t _unused1, uint64_t _unused2, uint64_
 
 uint64_t sys_free(uint64_t ptr, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
 {
-    mm_free((void*)ptr);
+    mm_free((void *)ptr);
     return 0;
 }
 
@@ -177,26 +186,22 @@ uint64_t sys_mem_state(uint64_t total_ptr, uint64_t free_ptr, uint64_t used_ptr,
     uint64_t total, free, used;
     mm_get_stats(&total, &free);
 
-    // For buddy system, values are in pages, convert to bytes
-    #ifdef BUDDY
-    total *= 4096;  // PAGE_SIZE
-    free *= 4096;
-    #endif
-
     used = total - free;
 
     if (total_ptr)
-        *((uint64_t*)total_ptr) = total;
+        *((uint64_t *)total_ptr) = total;
     if (free_ptr)
-        *((uint64_t*)free_ptr) = free;
+        *((uint64_t *)free_ptr) = free;
     if (used_ptr)
-        *((uint64_t*)used_ptr) = used;
-    if (name_ptr) {
-        const char* name = mm_get_name();
+        *((uint64_t *)used_ptr) = used;
+    if (name_ptr)
+    {
+        const char *name = mm_get_name();
         // Copy the name to userland memory
-        char* dest = (char*)name_ptr;
+        char *dest = (char *)name_ptr;
         int i = 0;
-        while (i < 31 && name[i] != '\0') {  // Max 31 chars + null
+        while (i < 31 && name[i] != '\0')
+        { // Max 31 chars + null
             dest[i] = name[i];
             i++;
         }
@@ -289,20 +294,26 @@ uint64_t sys_sleep(uint64_t seconds, uint64_t _unused1, uint64_t _unused2, uint6
     uint32_t target_seconds = start_seconds + (uint32_t)seconds;
 
     // Handle midnight rollover: RTC seconds go from 0-86399 (24 hours)
-    if (target_seconds >= 86400) {
+    if (target_seconds >= 86400)
+    {
         target_seconds -= 86400;
     }
 
     // Yield CPU until target time is reached
     // Handle both normal case and midnight rollover
-    if (target_seconds > start_seconds) {
+    if (target_seconds > start_seconds)
+    {
         // Normal case: just wait until we reach target
-        while (rtc_get_seconds() < target_seconds) {
+        while (rtc_get_seconds() < target_seconds)
+        {
             yield();
         }
-    } else {
+    }
+    else
+    {
         // Midnight rollover: wait until we pass midnight and reach target
-        while (rtc_get_seconds() >= start_seconds || rtc_get_seconds() < target_seconds) {
+        while (rtc_get_seconds() >= start_seconds || rtc_get_seconds() < target_seconds)
+        {
             yield();
         }
     }

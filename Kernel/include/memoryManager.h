@@ -54,46 +54,36 @@ typedef struct list_node
 // Estructura de página
 typedef struct page
 {
-    list_node_t lru;
+    list_node_t free_list_node;
     uint32_t order;
     uint32_t flags;
-    uint64_t pfn;
+    uint64_t frame_number;
 } page_t;
 
 // Lista de bloques libres para cada orden
 typedef struct free_area
 {
-    list_node_t free_list;
-    uint64_t nr_free;
+    list_node_t free_list_head;
+    uint64_t free_block_count;
 } free_area_t;
 
 // Zona de memoria
 typedef struct zone
 {
-    free_area_t free_area[MAX_ORDER + 1];
+    free_area_t free_lists[MAX_ORDER + 1];
     uint64_t total_pages;
-    uint64_t free_pages;
-    uint64_t start_pfn;
     page_t *pages;
-    uintptr_t heap_base;  // Actual heap start address
+    uintptr_t heap_base;
 } zone_t;
 
 // Buddy Memory Manager functions
-void buddy_init(zone_t *zone, uint64_t start_pfn, uint64_t total_pages, page_t *pages_array, uintptr_t heap_base);
-void buddy_free_pages(zone_t *zone, page_t *page, int order);
-page_t *buddy_alloc_pages(zone_t *zone, int order);
-void buddy_add_memory(zone_t *zone, uint64_t start_pfn, uint64_t nr_pages);
-void buddy_get_stats(zone_t *zone, uint64_t *total, uint64_t *free);
-uint64_t buddy_get_free_blocks(zone_t *zone, int order);
+void buddy_free_pages(page_t *page, int order);
+page_t *buddy_alloc_pages(int order);
+void buddy_add_memory(uint64_t nr_pages);
 
 // Conditional externs based on selected memory manager
 #ifdef FIRSTFIT
 extern KHEAPLCAB kernel_heap;
-#endif
-
-#ifdef BUDDY
-extern zone_t buddy_zone;
-extern page_t buddy_pages[];
 #endif
 
 #endif // MEMORY_MANAGER_H
