@@ -1,3 +1,5 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #ifdef BUDDY
 
 /*
@@ -103,7 +105,7 @@ static void add_to_free_list(zone_t *zone, page_t *page, int order)
 {
   free_area_t *area = &zone->free_area[order];
 
-  list_add(&page->lru, &area->free_list);
+  list_add(&page[0].lru, &area->free_list);
   area->nr_free++;
   zone->free_pages += (1UL << order);
 

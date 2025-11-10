@@ -1,3 +1,5 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "include/pipe.h"
 #include "include/scheduler.h"
 #include "include/memoryManager.h"
@@ -113,23 +115,27 @@ int8_t pipe_open_for_pid(uint16_t pid, uint16_t id, uint8_t mode) {
 
     // Open pipe for read or write
     if (mode == WRITE) {
-        if (pipe->inputPid != -1 && pipe->inputPid != pid) {
+        if (pipe->inputPid != -1 && pipe->inputPid != (int16_t)pid) {
             return -1;  // Already has a writer
         }
-        pipe->inputPid = pid;
+        pipe->inputPid = (int16_t)pid;
 
-        // Wake up reader if it's waiting for writer (improvement over TP2_SO)
+        // Wake up reader if it's waiting for writer
+        // Check outputPid (the reader) since we're opening for WRITE - the reader may be waiting for us
+        //-V:pipe->outputPid:1051
         if (pipe->outputPid != -1 && pipe->isBlocking) {
             set_status(pipe->outputPid, READY);
             pipe->isBlocking = 0;
         }
     } else if (mode == READ) {
-        if (pipe->outputPid != -1 && pipe->outputPid != pid) {
+        if (pipe->outputPid != -1 && pipe->outputPid != (int16_t)pid) {
             return -1;  // Already has a reader
         }
-        pipe->outputPid = pid;
+        pipe->outputPid = (int16_t)pid;
 
-        // Wake up writer if it's waiting for reader (improvement over TP2_SO)
+        // Wake up writer if it's waiting for reader
+        // Check inputPid (the writer) since we're opening for READ - the writer may be waiting for us
+        //-V:pipe->inputPid:1051
         if (pipe->inputPid != -1 && pipe->isBlocking) {
             set_status(pipe->inputPid, READY);
             pipe->isBlocking = 0;
@@ -188,7 +194,7 @@ int8_t pipe_close_for_pid(uint16_t pid, uint16_t id) {
 
 int64_t pipe_read(uint16_t id, char *buffer, uint64_t len) {
     Pipe *pipe = get_pipe_by_id(id);
-    if (pipe == NULL || pipe->outputPid != get_pid() || len == 0) {
+    if (pipe == NULL || pipe->outputPid != (int16_t)get_pid() || len == 0) {
         return -1;
     }
 
@@ -243,7 +249,7 @@ int64_t pipe_read(uint16_t id, char *buffer, uint64_t len) {
 
 int64_t pipe_write(uint16_t pid, uint16_t id, const char *buffer, uint64_t len) {
     Pipe *pipe = get_pipe_by_id(id);
-    if (pipe == NULL || pipe->inputPid != pid || len == 0) {
+    if (pipe == NULL || pipe->inputPid != (int16_t)pid || len == 0) {
         return -1;
     }
 

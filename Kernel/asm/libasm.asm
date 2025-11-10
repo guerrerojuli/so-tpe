@@ -23,3 +23,6 @@ _xchg:
   mov rax, rsi
   xchg [rdi], eax
   ret
+
+; Mark stack as non-executable for security (NX bit / DEP)
+section .note.GNU-stack noalloc noexec nowrite progbits

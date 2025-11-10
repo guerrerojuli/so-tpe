@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+//-V:printf:111,576,618,719,303
 #include <stdio.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -60,7 +63,7 @@ static uint64_t writer_process(uint64_t argc, char *argv[])
     }
 
     // Infinite loop: write to MVar
-    while (1)
+    while (1) //-V776
     {
         // Random active wait
         uint32_t wait_time = rand() % 100000;
@@ -103,7 +106,7 @@ static uint64_t reader_process(uint64_t argc, char *argv[])
     }
 
     // Infinite loop: read from MVar
-    while (1)
+    while (1) //-V776
     {
         // Random active wait
         uint32_t wait_time = rand() % 100000;
@@ -192,13 +195,7 @@ static int mvar_func(int argc, char **argv)
         char writer_name[32];
         build_name(writer_name, "writer_", i);
 
-        uint64_t pid = sys_create_process((uint64_t)&writer_process, (uint64_t)writer_args,
-                                          (uint64_t)writer_name, 2, (uint64_t)default_fds);
-        if (pid < 0)
-        {
-            puts("mvar: ERROR creating writer process\n");
-            return -1;
-        }
+        sys_create_process((uint64_t)&writer_process, (uint64_t)writer_args, (uint64_t)writer_name, 2, (uint64_t)default_fds);
     }
 
     // Create reader processes
@@ -211,13 +208,7 @@ static int mvar_func(int argc, char **argv)
         char reader_name[32];
         build_name(reader_name, "reader_", i);
 
-        uint64_t pid = sys_create_process((uint64_t)&reader_process, (uint64_t)reader_args,
-                                          (uint64_t)reader_name, 2, (uint64_t)default_fds);
-        if (pid < 0)
-        {
-            puts("mvar: ERROR creating reader process\n");
-            return -1;
-        }
+        sys_create_process((uint64_t)&reader_process, (uint64_t)reader_args, (uint64_t)reader_name, 2, (uint64_t)default_fds);
     }
 
     return 0;

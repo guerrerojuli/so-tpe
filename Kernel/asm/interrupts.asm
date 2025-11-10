@@ -227,3 +227,6 @@ _initialize_stack_frame:
 
 SECTION .bss
 	aux resq 1
+
+; Mark stack as non-executable for security (NX bit / DEP)
+section .note.GNU-stack noalloc noexec nowrite progbits

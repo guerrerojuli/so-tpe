@@ -1,3 +1,10 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+
+// PVS-Studio: Suppress warnings for custom printf/scanf implementation
+//-V:printf:111,576,618,719,303
+//-V:scanf:111,576,618,719,303
+
 #include "unistd.h"
 #include "stdio.h"
 #include "stddef.h"
@@ -313,7 +320,8 @@ void shell_loop(void) {
         // Show prompt
         printf("$ ", NULL);
 
-        // Read input
+        // Read input (STDIN is 0, not a null pointer)
+        //-V:fgets:575
         if (fgets(input_buffer, MAX_COMMAND_LENGTH, STDIN) != NULL) {
             // Remove newline
             size_t len = strlen(input_buffer);

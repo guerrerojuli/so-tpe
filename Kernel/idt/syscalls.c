@@ -1,3 +1,5 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include <syscalls.h>
 #include <videoDriver.h>
 #include <consoleDriver.h>
@@ -194,7 +196,7 @@ uint64_t sys_mem_state(uint64_t total_ptr, uint64_t free_ptr, uint64_t used_ptr,
         // Copy the name to userland memory
         char* dest = (char*)name_ptr;
         int i = 0;
-        while (name[i] != '\0' && i < 31) {  // Max 31 chars + null
+        while (i < 31 && name[i] != '\0') {  // Max 31 chars + null
             dest[i] = name[i];
             i++;
         }
