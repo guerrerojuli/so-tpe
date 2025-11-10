@@ -2,35 +2,17 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #ifdef FIRSTFIT
 
-/*
- * First-fit allocator with implicit free list and coalescing
- */
 #include <stdint.h>
 #include "../include/lib.h"
 #include <stddef.h>
 
 /*
  * KHEAPFLAG_USED - Flag to mark a chunk as used
- *
- * This flag is stored in the highest bit (bit 31) of the flagsize field.
- * When set (0x80000000), the chunk is in use.
- * When clear, the chunk is free.
  */
 #define KHEAPFLAG_USED 0x80000000
 
 /*
  * KHEAPHDRLCAB - Header for each memory chunk
- *
- * Each allocated or free chunk has this header immediately before the user data.
- *
- * prevsize: Size of the previous chunk (in bytes)
- *           This allows us to walk backwards through chunks for coalescing
- *           If 0, this is the first chunk in the block
- *
- * flagsize: Combined field containing:
- *           - Bit 31: USED flag (1 = used, 0 = free)
- *           - Bits 0-30: Size of THIS chunk in bytes (max 2GB)
- *           The size does NOT include the header itself
  */
 typedef struct _KHEAPHDRLCAB {
     uint32_t prevsize;   // Size of previous chunk
@@ -39,14 +21,7 @@ typedef struct _KHEAPHDRLCAB {
 
 /*
  * KHEAPBLOCKLCAB - Represents a contiguous memory block
- *
- * The heap can consist of multiple non-contiguous blocks (like pages from the OS).
- * Each block is managed independently but linked together.
- *
- * size: Total size of this block in bytes (including the block header)
- * used: Total bytes currently allocated to users (not including headers)
- * next: Pointer to the next block in the linked list
- */
+*/
 typedef struct _KHEAPBLOCKLCAB {
     uint32_t size;                       // Total block size
     uint32_t used;                       // Bytes allocated to users
@@ -55,9 +30,6 @@ typedef struct _KHEAPBLOCKLCAB {
 
 /*
  * KHEAPLCAB - Main heap manager structure
- *
- * fblock: First block in the linked list of memory blocks
- * bcnt: Total number of blocks in the heap
  */
 typedef struct _KHEAPLCAB {
     KHEAPBLOCKLCAB *fblock;  // First block
@@ -65,33 +37,16 @@ typedef struct _KHEAPLCAB {
 } KHEAPLCAB;
 
 // Global kernel heap instance
+// LCAB = Linked Chunk Allocation Block
 static KHEAPLCAB kernel_heap;
 
-/*
- * k_heapLCABInit - Initialize the heap manager
- *
- * @heap: Pointer to the heap structure to initialize
- *
- * Sets up an empty heap with no memory blocks.
- */
 void k_heapLCABInit(KHEAPLCAB *heap) {
-    heap->fblock = 0;   // No blocks yet
-    heap->bcnt = 0;     // Zero blocks
+    heap->fblock = 0;
+    heap->bcnt = 0;
 }
 
 /*
- * k_heapLCABAddBlock - Add a memory block to the heap
- *
- * @heap: The heap manager
- * @addr: Starting address of the memory region
- * @size: Size of the memory region in bytes
- *
- * Returns: 1 on success
- *
- * This takes a raw memory region and sets it up as a managed block.
- * The block starts with a KHEAPBLOCKLCAB header, followed by a single
- * large free chunk.
- *
+ * k_heapLCABAddBlock - Add a memory block to the heap manager
  */
 int k_heapLCABAddBlock(KHEAPLCAB *heap, uintptr_t addr, uint32_t size) {
     KHEAPBLOCKLCAB *hb = (KHEAPBLOCKLCAB*)addr;
@@ -124,21 +79,6 @@ int k_heapLCABAddBlock(KHEAPLCAB *heap, uintptr_t addr, uint32_t size) {
 
 /*
  * k_heapLCABAlloc - Allocate memory from the heap
- *
- * @heap: The heap manager
- * @size: Number of bytes to allocate
- *
- * Returns: Pointer to allocated memory, or NULL if allocation fails
- *
- * Algorithm:
- * 1. Iterate through each block
- * 2. Within each block, iterate through chunks looking for a free one
- * 3. If a free chunk is large enough:
- *    a. If a free chunk is more than (size + header + 16 bytes) large, we split it to avoid wasting space.
- *    b. Mark the chunk as used
- *    c. Update bookkeeping
- * 4. Return pointer to the user data (after the header)
- *
  */
 void* k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size) {
     KHEAPBLOCKLCAB *hb;
@@ -209,22 +149,6 @@ void* k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size) {
 
 /*
  * k_heapLCABFree - Free previously allocated memory
- *
- * @heap: The heap manager
- * @ptr: Pointer to memory to free
- *
- * Algorithm:
- * 1. Find which block contains this pointer
- * 2. Get the chunk header (just before the pointer)
- * 3. Mark the chunk as free
- * 4. Try to coalesce with adjacent free chunks
- *    a. Merge with next chunk if free
- *    b. Merge with previous chunk if free
- *
- * Coalescing:
- * When we free a chunk, we check the chunks immediately before and after.
- * If they're also free, we merge them into one large chunk.
- * This reduces fragmentation and makes future allocations more likely to succeed.
  */
 void k_heapLCABFree(KHEAPLCAB *heap, void *ptr) {
     KHEAPHDRLCAB *hdr, *phdr, *nhdr;
