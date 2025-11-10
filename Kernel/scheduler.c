@@ -268,16 +268,23 @@ int32_t kill_process(uint16_t pid, int32_t retval)
         Process *zombie_child = (Process *)zombie_node->data;
         uint16_t zombie_pid = zombie_child->pid;
 
-        // Remove from parent's zombie list
-        list_remove(&process->zombie_children, zombie_node);  // This already frees zombie_node
+        // Save the node from scheduler.processes before we remove from zombie list
+        Node *scheduler_node = scheduler.processes[zombie_pid];
 
-        // Remove from main process table
+        // Remove from parent's zombie list
+        list_remove(&process->zombie_children, zombie_node);  // This frees zombie_node from parent's list
+
+        // Remove from main process table and free the scheduler's node
         scheduler.processes[zombie_pid] = NULL;
         scheduler.num_processes--;
 
         // Free zombie child resources
         free_process(zombie_child);
         mm_free(zombie_child);  // Free the Process structure
+
+        // Free the node that was in scheduler.processes (this is the same as zombie_node since we updated it)
+        // Note: zombie_node was already freed by list_remove, and it's the same as scheduler_node
+        // so we don't need to free scheduler_node separately (it's already freed)
     }
 
     process->status = ZOMBIE;
@@ -312,7 +319,10 @@ int32_t kill_process(uint16_t pid, int32_t retval)
         if (parent->status != ZOMBIE)
         {
             // Add zombie to parent's zombie_children list
-            list_append(&parent->zombie_children, process);
+            // CRITICAL: list_append returns a new node, we must update scheduler.processes[pid]
+            // to avoid use-after-free (the old node was freed by list_remove above)
+            Node *zombie_node = list_append(&parent->zombie_children, process);
+            scheduler.processes[pid] = zombie_node;
 
             // If parent is waiting for this specific child, unblock it
             if (parent->waiting_for_pid == pid && parent->status == BLOCKED)
@@ -327,7 +337,7 @@ int32_t kill_process(uint16_t pid, int32_t retval)
             scheduler.num_processes--;
             free_process(process);
             mm_free(process);  // Free the Process structure itself
-            mm_free(node);
+            // NOTE: Don't free node - it was already freed by list_remove above
         }
     }
     else
@@ -337,7 +347,7 @@ int32_t kill_process(uint16_t pid, int32_t retval)
         scheduler.num_processes--;
         free_process(process);
         mm_free(process);  // Free the Process structure itself
-        mm_free(node);
+        // NOTE: Don't free node - it was already freed by list_remove above
     }
 
     // If current process is dying, force context switch
@@ -532,7 +542,7 @@ int32_t waitpid(uint16_t pid)
     scheduler.num_processes--;
     free_process(child_process);
     mm_free(child_process);  // Free the Process structure itself
-    mm_free(child_node);
+    // NOTE: Don't free child_node - it's the same as zombie_node which was already freed by list_remove above
 
     // Clear waiting state and foreground status
     parent->waiting_for_pid = 0;

@@ -43,7 +43,8 @@ int nice_main(int argc, char **argv) {
     }
 
     // Call set_priority syscall
-    int result = sys_set_priority(pid, priority);
+    // Cast to int64_t to properly handle sign-extended error codes
+    int64_t result = (int64_t)sys_set_priority(pid, priority);
 
     if (result < 0) {
         args[0] = (void*)&pid;

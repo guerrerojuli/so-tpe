@@ -79,7 +79,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
         case 0:
           if (p_rqs[rq].state == TEST_RUNNING || p_rqs[rq].state == TEST_BLOCKED)
           {
-            if (sys_kill_process(p_rqs[rq].pid, -1) == -1)
+            if ((int64_t)sys_kill_process(p_rqs[rq].pid, -1) == -1)
             {
               puts("test_processes: ERROR killing process\n");
               return -1;
@@ -92,7 +92,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
         case 1:
           if (p_rqs[rq].state == TEST_RUNNING)
           {
-            if (sys_block(p_rqs[rq].pid) == -1)
+            if ((int64_t)sys_block(p_rqs[rq].pid) == -1)
             {
               puts("test_processes: ERROR blocking process\n");
               return -1;
@@ -107,7 +107,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
       for (rq = 0; rq < max_processes; rq++)
         if (p_rqs[rq].state == TEST_BLOCKED && GetUniform(100) % 2)
         {
-          if (sys_unblock(p_rqs[rq].pid) == -1)
+          if ((int64_t)sys_unblock(p_rqs[rq].pid) == -1)
           {
             puts("test_processes: ERROR unblocking process\n");
             return -1;

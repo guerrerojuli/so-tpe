@@ -59,16 +59,17 @@ int block_main(int argc, char **argv) {
     }
 
     // Toggle based on current state
-    int result;
+    // Cast to int64_t to properly handle sign-extended error codes
+    int64_t result;
     const char *action;
 
     if (current_status == BLOCKED) {
         // Process is blocked, unblock it
-        result = sys_unblock(pid);
+        result = (int64_t)sys_unblock(pid);
         action = "unblocked";
     } else {
         // Process is ready or running, block it
-        result = sys_block(pid);
+        result = (int64_t)sys_block(pid);
         action = "blocked";
     }
 

@@ -23,7 +23,8 @@ int kill_main(int argc, char **argv) {
     }
 
     // Call kill_process syscall
-    int result = sys_kill_process(pid, -1);  // -1 as signal (killed by user)
+    // Cast to int64_t first to properly handle sign-extended error codes
+    int64_t result = (int64_t)sys_kill_process(pid, -1);  // -1 as signal (killed by user)
 
     if (result < 0) {
         args[0] = (void*)&pid;
