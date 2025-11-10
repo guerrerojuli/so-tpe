@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 
+// File descriptor constants
+#define DEV_NULL 3
+
 // Process states
 typedef enum {
     READY = 0,

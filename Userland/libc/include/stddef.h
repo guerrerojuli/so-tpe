@@ -1,5 +1,6 @@
+#ifndef STDDEF_H
+#define STDDEF_H
+
 #define NULL ((void*)0)
-#define STDIN 0
-#define STDOUT 1
-#define STDERR 2
-#define DEV_NULL -1
+
+#endif

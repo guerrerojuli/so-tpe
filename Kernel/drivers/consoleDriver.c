@@ -1,3 +1,5 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include <consoleDriver.h>
 #include <videoDriver.h>
 #include <interrupts.h>
@@ -409,8 +411,6 @@ static void handle_buffer_overflow(void)
             (buffer_length - shift_amount) * sizeof(console_char_t));
     buffer_length -= shift_amount;
     cursor_position -= shift_amount;
-    if (cursor_position < 0)
-        cursor_position = 0;
 }
 
 /**

@@ -1,3 +1,6 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+//-V:printf:111,576,618,719,303
 #include "commands.h"
 #include "stdio.h"
 #include "unistd.h"
@@ -35,7 +38,7 @@ static int loop_func(int argc, char **argv) {
     int64_t pid = sys_get_pid();
     int loop_count = 0;
 
-    while (1) {
+    while (1) { //-V776
         void *args[2] = {&pid, &loop_count};
         printf("[PID %d] Hello from loop! (iteration %d)\n", args);
         loop_count++;

@@ -1,3 +1,5 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "stdio.h"
 #include "stdlib.h"
 #include "ctype.h"
@@ -110,7 +112,7 @@ int printf(const char *format, void **args){
                 i++;
             }
             int len = i - start;
-            sys_write(STDOUT, &format[start], len);
+            sys_write((uint64_t)STDOUT, &format[start], len);
             toReturn += len;
             i--; // compensate for for-loop increment
         }
@@ -119,23 +121,23 @@ int printf(const char *format, void **args){
 }
 
 int putchar(char c){
-    sys_write(STDOUT, &c, 1);
+    sys_write((uint64_t)STDOUT, &c, 1);
     return c;
 }
 
 int puts(const char *s){
     int len = strlen(s);
-    sys_write(STDOUT, s, len);
+    sys_write((uint64_t)STDOUT, s, len);
     return len;
 }
 
 int getchar(void){
     char c;
-    sys_read(STDIN, &c, 1);
+    sys_read((uint64_t)STDIN, &c, 1);
     return c;
 }
 
-char *fgets(char *s, int size, FILE *stream) {
+char *fgets(char *s, int size, int stream) {
     if (s == NULL || size <= 0) {
         return NULL;
     }
@@ -150,7 +152,7 @@ char *fgets(char *s, int size, FILE *stream) {
     
     // Read characters until newline, EOF, or buffer full
     while (i < size - 1) {
-        if (sys_read(STDIN, &c, 1) <= 0) {
+        if (sys_read((uint64_t)STDIN, &c, 1) <= 0) {
             // EOF or error
             if (i == 0) {
                 return NULL;  // No characters read

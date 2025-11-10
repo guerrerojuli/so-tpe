@@ -143,3 +143,6 @@ sys_sleep:
 sys_get_ticks:
     syscall 25
 
+; Mark stack as non-executable for security (NX bit / DEP)
+section .note.GNU-stack noalloc noexec nowrite progbits
+

@@ -1,3 +1,5 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include <stdint.h>
 #include <lib.h>
 #include <videoDriver.h>
@@ -24,9 +26,6 @@ extern void kill_foreground_process(void);
 // Optimization: Bit masks for faster key detection
 #define SCANCODE_MASK 0x7F // Lower 7 bits contain the key code
 #define RELEASE_FLAG 0x80  // High bit indicates key release
-
-// Multi-key support: Array to track key states (1 = pressed, 0 = released)
-static uint8_t key_states[128] = {0}; // Support for 128 scancodes
 
 // Optimized key detection using bit operations
 #define IS_CAPS_LOCK(scancode) ((scancode) == SCANCODE_CAPS_LOCK)
@@ -120,12 +119,6 @@ void keyboard_handler(const registers_t *registers)
     uint8_t raw_scancode = inb(KEYBOARD_DATA_PORT);
     uint8_t scancode = raw_scancode & SCANCODE_MASK;  // Remove release flag
     uint8_t is_release = raw_scancode & RELEASE_FLAG; // Check if it's a key release
-
-    // Multi-key support: Update key state array
-    if (scancode < 128)
-    {
-        key_states[scancode] = is_release ? 0 : 1;
-    }
 
     // Handle Ctrl key press and release
     if (scancode == SCANCODE_LCTRL_PRESS && !is_release)
