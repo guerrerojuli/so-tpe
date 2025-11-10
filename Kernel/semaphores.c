@@ -2,7 +2,7 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include <defs.h>
 #include <lib.h>
-#include <linkedListADT.h>
+#include <list.h>
 #include <memoryManager.h>
 #include <process.h>
 #include <scheduler.h>
@@ -17,14 +17,14 @@ typedef uint16_t sem_t;
 typedef struct Semaphore {
 	uint32_t value;
 	int mutex;					  // 0 libre, 1 ocupado
-	LinkedListADT semaphoreQueue; // LinkedListADT de pids
-	LinkedListADT mutexQueue;	  // LinkedListADT de pids
+	List *semaphoreQueue;         // List de pids
+	List *mutexQueue;	          // List de pids
 } Semaphore;
 
 static Semaphore *createSemaphore(uint32_t initialValue);
 static void freeSemaphore(Semaphore *sem);
 static void acquireMutex(Semaphore *sem);
-static void resumeFirstAvailableProcess(LinkedListADT queue);
+static void resumeFirstAvailableProcess(List *queue);
 static void releaseMutex(Semaphore *sem);
 static int up(Semaphore *sem);
 static int down(Semaphore *sem);
@@ -129,21 +129,50 @@ static Semaphore *createSemaphore(uint32_t initialValue) {
 	Semaphore *sem = (Semaphore *) mm_alloc(sizeof(Semaphore));
 	sem->value = initialValue;
 	sem->mutex = 0;
-	sem->semaphoreQueue = createLinkedListADT();
-	sem->mutexQueue = createLinkedListADT();
+
+	// Allocate and initialize the semaphore queue
+	sem->semaphoreQueue = (List *) mm_alloc(sizeof(List));
+	list_init(sem->semaphoreQueue);
+
+	// Allocate and initialize the mutex queue
+	sem->mutexQueue = (List *) mm_alloc(sizeof(List));
+	list_init(sem->mutexQueue);
+
 	return sem;
 }
 
 static void freeSemaphore(Semaphore *sem) {
-	freeLinkedListADTDeep(sem->semaphoreQueue);
-	freeLinkedListADTDeep(sem->mutexQueue);
+	if (!sem) return;
+
+	// Free all nodes in semaphoreQueue
+	if (sem->semaphoreQueue) {
+		Node *current = sem->semaphoreQueue->head;
+		while (current) {
+			Node *next = current->next;
+			mm_free(current);
+			current = next;
+		}
+		mm_free(sem->semaphoreQueue);
+	}
+
+	// Free all nodes in mutexQueue
+	if (sem->mutexQueue) {
+		Node *current = sem->mutexQueue->head;
+		while (current) {
+			Node *next = current->next;
+			mm_free(current);
+			current = next;
+		}
+		mm_free(sem->mutexQueue);
+	}
+
 	mm_free(sem);
 }
 
 static void acquireMutex(Semaphore *sem) {
 	while (_xchg(&(sem->mutex), 1)) {
 		uint16_t pid = get_pid();
-		appendElement(sem->mutexQueue, (void *) ((uint64_t) pid));
+		list_append(sem->mutexQueue, (void *) ((uint64_t) pid));
 		set_status(pid, BLOCKED);
 		yield();
 	}
@@ -155,12 +184,12 @@ static int process_is_alive(uint16_t pid) {
 	return pid > 0;  // For now, assume all non-zero PIDs are alive
 }
 
-static void resumeFirstAvailableProcess(LinkedListADT queue) {
+static void resumeFirstAvailableProcess(List *queue) {
 	Node *current;
-	while ((current = getFirst(queue)) != NULL) {
-		removeNode(queue, current);
-		uint16_t pid = (uint16_t) ((uint64_t) current->data);
-		mm_free(current);
+	while ((current = list_get_first(queue)) != NULL) {
+		// list_remove frees the node and returns the data
+		void *data = list_remove(queue, current);
+		uint16_t pid = (uint16_t) ((uint64_t) data);
 		if (process_is_alive(pid)) {
 			set_status(pid, READY);
 			break;
@@ -190,7 +219,7 @@ static int down(Semaphore *sem) {
 	acquireMutex(sem);
 	while (sem->value == 0) {
 		uint16_t pid = get_pid();
-		appendElement(sem->semaphoreQueue, (void *) ((uint64_t) pid));
+		list_append(sem->semaphoreQueue, (void *) ((uint64_t) pid));
 		set_status(pid, BLOCKED);
 		releaseMutex(sem);
 		yield();
