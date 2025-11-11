@@ -291,8 +291,6 @@ int32_t kill_process(uint16_t pid, int32_t retval)
         Process *zombie_child = (Process *)zombie_node->data;
         uint16_t zombie_pid = zombie_child->pid;
 
-        Node *scheduler_node = scheduler.processes[zombie_pid];
-
         list_remove(&process->zombie_children, zombie_node);
 
         scheduler.processes[zombie_pid] = NULL;
