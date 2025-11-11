@@ -162,7 +162,7 @@ static uint64_t reader_process(uint64_t argc, char *argv[])
         // Print value with identifier
         // Using different output formats for different readers
         void *args[] = {(void *)&reader_id, (void *)&value};
-        printf("[%d]%c", args);
+        printf(" [%d]%c ", args);
     }
 
     return 0;
@@ -265,5 +265,4 @@ static int mvar_func(int argc, char **argv)
 command mvar_cmd = {
     "mvar",
     mvar_func,
-    "Multiple readers/writers with MVar pattern"
-};
+    "Multiple readers/writers with MVar pattern"};
