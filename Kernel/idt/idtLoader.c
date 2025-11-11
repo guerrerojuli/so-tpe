@@ -2,8 +2,9 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include <stdint.h>
 #include <idtLoader.h>
-#include <defs.h>
 #include <interrupts.h>
+
+#define ACS_INT 0x8E  // Interrupt GATE (PRESENT | INT_386)
 
 #pragma pack(push)		/* Push de la alineación actual */
 #pragma pack (1) 		/* Alinear las siguiente estructuras a 1 byte */

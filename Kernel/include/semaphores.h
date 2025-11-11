@@ -1,5 +1,5 @@
-#ifndef SEMAPHORE_MANAGER_H
-#define SEMAPHORE_MANAGER_H
+#ifndef SEMAPHORES_H
+#define SEMAPHORES_H
 
 #include <stdint.h>
 
@@ -20,5 +20,5 @@ int8_t sem_destroy(sem_t *sem);
 int8_t sem_post(sem_t *sem);
 int8_t sem_wait(sem_t *sem);
 
-#endif // SEMAPHORE_MANAGER_H
+#endif // SEMAPHORES_H
 

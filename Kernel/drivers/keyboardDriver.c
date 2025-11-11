@@ -4,7 +4,7 @@
 #include <lib.h>
 #include <videoDriver.h>
 #include <registers.h>
-#include <semaphoreManager.h>
+#include <semaphores.h>
 #include <scheduler.h>
 #include <consoleDriver.h>
 

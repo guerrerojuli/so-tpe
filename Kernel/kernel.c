@@ -10,7 +10,7 @@
 #include <registers.h>
 #include <memoryManager.h>
 #include <scheduler.h>
-#include <semaphoreManager.h>
+#include <semaphores.h>
 #include <pipe.h>
 #include <globals.h>
 #include <keyboardDriver.h>

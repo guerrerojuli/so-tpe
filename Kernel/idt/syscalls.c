@@ -6,7 +6,7 @@
 #include <keyboardDriver.h>
 #include <scheduler.h>
 #include <memoryManager.h>
-#include <semaphoreManager.h>
+#include <semaphores.h>
 #include <lib.h>
 #include <pipe.h>
 #include <time.h>

@@ -1,12 +1,11 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-#include <defs.h>
 #include <lib.h>
 #include <list.h>
 #include <memoryManager.h>
 #include <process.h>
 #include <scheduler.h>
-#include <semaphoreManager.h>
+#include <semaphores.h>
 #include <stdint.h>
 #include <stdlib.h>
 
