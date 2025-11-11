@@ -15,6 +15,9 @@ void list_init(List *list) {
 
 Node *list_append(List *list, void *data) {
     Node *node = (Node *)mm_alloc(sizeof(Node));
+    if (node == NULL) {
+        return NULL;
+    }
 
     node->data = data;
     node->next = NULL;
@@ -33,6 +36,9 @@ Node *list_append(List *list, void *data) {
 
 Node *list_prepend(List *list, void *data) {
     Node *node = (Node *)mm_alloc(sizeof(Node));
+    if (node == NULL) {
+        return NULL;
+    }
 
     node->data = data;
     node->next = list->head;

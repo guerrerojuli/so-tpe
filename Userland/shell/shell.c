@@ -223,7 +223,9 @@ void execute_single_command(Command *cmd, int is_background) {
             // Process creation not supported, run directly
             cmd_ptr->func(arg_count, current_args);
         } else {
-            waitpid((uint16_t)pid);  // Wait for completion
+            if (waitpid((uint16_t)pid) < 0) {
+                printf("Warning: failed to wait for foreground process\n", NULL);
+            }
         }
     }
 }
@@ -295,7 +297,8 @@ void execute_piped_commands(ParsedInput *parsed) {
 
     if (pid2 < 0) {
         printf("Failed to create second process in pipe\n", NULL);
-        // TODO: Should kill first process?
+        // Kill first process to avoid orphan
+        sys_kill_process((uint16_t)pid1, -1);
         return;
     }
 
@@ -307,8 +310,12 @@ void execute_piped_commands(ParsedInput *parsed) {
     } else {
         // Wait for both processes to prevent zombies
         // When pid1 exits, it closes the pipe, causing pid2 to receive EOF and exit naturally
-        waitpid((uint16_t)pid1);
-        waitpid((uint16_t)pid2);
+        if (waitpid((uint16_t)pid1) < 0) {
+            printf("Warning: failed to wait for first process in pipe\n", NULL);
+        }
+        if (waitpid((uint16_t)pid2) < 0) {
+            printf("Warning: failed to wait for second process in pipe\n", NULL);
+        }
     }
 }
 

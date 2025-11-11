@@ -70,19 +70,35 @@ static uint64_t writer_process(uint64_t argc, char *argv[])
         busy_wait(wait_time);
 
         // Wait until can write (MVar is empty)
-        sys_sem_wait(MVAR_WRITE_SEM);
+        if (sys_sem_wait(MVAR_WRITE_SEM) < 0)
+        {
+            puts("Writer: ERROR in sem_wait(MVAR_WRITE_SEM)\n");
+            return -1;
+        }
 
         // Lock mutex
-        sys_sem_wait(MVAR_MUTEX);
+        if (sys_sem_wait(MVAR_MUTEX) < 0)
+        {
+            puts("Writer: ERROR in sem_wait(MVAR_MUTEX)\n");
+            return -1;
+        }
 
         // Write to shared variable
         shared_mvar = my_letter;
 
         // Unlock mutex
-        sys_sem_post(MVAR_MUTEX);
+        if (sys_sem_post(MVAR_MUTEX) < 0)
+        {
+            puts("Writer: ERROR in sem_post(MVAR_MUTEX)\n");
+            return -1;
+        }
 
         // Signal readers (MVar is full)
-        sys_sem_post(MVAR_READ_SEM);
+        if (sys_sem_post(MVAR_READ_SEM) < 0)
+        {
+            puts("Writer: ERROR in sem_post(MVAR_READ_SEM)\n");
+            return -1;
+        }
     }
 
     return 0;
@@ -113,19 +129,35 @@ static uint64_t reader_process(uint64_t argc, char *argv[])
         busy_wait(wait_time);
 
         // Wait until data is available (MVar is full)
-        sys_sem_wait(MVAR_READ_SEM);
+        if (sys_sem_wait(MVAR_READ_SEM) < 0)
+        {
+            puts("Reader: ERROR in sem_wait(MVAR_READ_SEM)\n");
+            return -1;
+        }
 
         // Lock mutex
-        sys_sem_wait(MVAR_MUTEX);
+        if (sys_sem_wait(MVAR_MUTEX) < 0)
+        {
+            puts("Reader: ERROR in sem_wait(MVAR_MUTEX)\n");
+            return -1;
+        }
 
         // Read from shared variable
         char value = shared_mvar;
 
         // Unlock mutex
-        sys_sem_post(MVAR_MUTEX);
+        if (sys_sem_post(MVAR_MUTEX) < 0)
+        {
+            puts("Reader: ERROR in sem_post(MVAR_MUTEX)\n");
+            return -1;
+        }
 
         // Signal writers (MVar is empty)
-        sys_sem_post(MVAR_WRITE_SEM);
+        if (sys_sem_post(MVAR_WRITE_SEM) < 0)
+        {
+            puts("Reader: ERROR in sem_post(MVAR_WRITE_SEM)\n");
+            return -1;
+        }
 
         // Print value with identifier
         // Using different output formats for different readers
@@ -195,7 +227,15 @@ static int mvar_func(int argc, char **argv)
         char writer_name[32];
         build_name(writer_name, "writer_", i);
 
-        sys_create_process((uint64_t)&writer_process, (uint64_t)writer_args, (uint64_t)writer_name, 2, (uint64_t)default_fds);
+        int64_t pid = sys_create_process((uint64_t)&writer_process, (uint64_t)writer_args, (uint64_t)writer_name, 2, (uint64_t)default_fds);
+        if (pid < 0)
+        {
+            puts("mvar: ERROR creating writer process\n");
+            sys_sem_destroy(MVAR_MUTEX);
+            sys_sem_destroy(MVAR_READ_SEM);
+            sys_sem_destroy(MVAR_WRITE_SEM);
+            return -1;
+        }
     }
 
     // Create reader processes
@@ -208,7 +248,15 @@ static int mvar_func(int argc, char **argv)
         char reader_name[32];
         build_name(reader_name, "reader_", i);
 
-        sys_create_process((uint64_t)&reader_process, (uint64_t)reader_args, (uint64_t)reader_name, 2, (uint64_t)default_fds);
+        int64_t pid = sys_create_process((uint64_t)&reader_process, (uint64_t)reader_args, (uint64_t)reader_name, 2, (uint64_t)default_fds);
+        if (pid < 0)
+        {
+            puts("mvar: ERROR creating reader process\n");
+            sys_sem_destroy(MVAR_MUTEX);
+            sys_sem_destroy(MVAR_READ_SEM);
+            sys_sem_destroy(MVAR_WRITE_SEM);
+            return -1;
+        }
     }
 
     return 0;

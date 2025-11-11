@@ -47,10 +47,22 @@ uint64_t my_process_inc(uint64_t argc, char *argv[])
   for (i = 0; i < n; i++)
   {
     if (use_sem)
-      sys_sem_wait(SEM_ID);
+    {
+      if (sys_sem_wait(SEM_ID) < 0)
+      {
+        puts("test_sync: ERROR in sem_wait\n");
+        return -1;
+      }
+    }
     slowInc(&global, inc);
     if (use_sem)
-      sys_sem_post(SEM_ID);
+    {
+      if (sys_sem_post(SEM_ID) < 0)
+      {
+        puts("test_sync: ERROR in sem_post\n");
+        return -1;
+      }
+    }
   }
 
   if (use_sem)
@@ -88,13 +100,33 @@ uint64_t test_sync(uint64_t argc, char *argv[])
   for (i = 0; i < TOTAL_PAIR_PROCESSES; i++)
   {
     pids[i] = sys_create_process((uint64_t)&my_process_inc, (uint64_t)argvDec, (uint64_t)"my_process_inc", 0, (uint64_t)default_fds);
+    if (pids[i] < 0)
+    {
+      puts("test_sync: ERROR creating decrement process\n");
+      if (useSem)
+        sys_sem_destroy(SEM_ID);
+      return -1;
+    }
     pids[i + TOTAL_PAIR_PROCESSES] = sys_create_process((uint64_t)&my_process_inc, (uint64_t)argvInc, (uint64_t)"my_process_inc", 0, (uint64_t)default_fds);
+    if (pids[i + TOTAL_PAIR_PROCESSES] < 0)
+    {
+      puts("test_sync: ERROR creating increment process\n");
+      if (useSem)
+        sys_sem_destroy(SEM_ID);
+      return -1;
+    }
   }
 
   for (i = 0; i < TOTAL_PAIR_PROCESSES; i++)
   {
-    sys_waitpid(pids[i]);
-    sys_waitpid(pids[i + TOTAL_PAIR_PROCESSES]);
+    if (sys_waitpid(pids[i]) < 0)
+    {
+      puts("test_sync: ERROR waiting for decrement process\n");
+    }
+    if (sys_waitpid(pids[i + TOTAL_PAIR_PROCESSES]) < 0)
+    {
+      puts("test_sync: ERROR waiting for increment process\n");
+    }
   }
 
   // Parent destroys the semaphore after all children finish

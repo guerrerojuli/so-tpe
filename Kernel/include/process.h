@@ -33,9 +33,9 @@ typedef struct Process {
 } Process;
 
 // Process management
-void init_process(Process *process, uint16_t pid, uint16_t parent_pid,
-                  MainFunction code, char **args, char *name,
-                  uint8_t priority, int16_t fds[3], uint8_t unkillable);
+int8_t init_process(Process *process, uint16_t pid, uint16_t parent_pid,
+                    MainFunction code, char **args, char *name,
+                    uint8_t priority, int16_t fds[3], uint8_t unkillable);
 void free_process(Process *process);
 
 #endif

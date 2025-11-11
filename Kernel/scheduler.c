@@ -18,10 +18,10 @@ typedef struct
     uint16_t current_pid;
     uint16_t next_unused_pid;
     uint16_t num_processes;
-    int16_t remaining_quantum; // Changed to int16_t to support larger quantum values
-    int16_t initial_quantum;   // Quantum assigned at start of time slice
-    uint8_t kill_fg_flag;      // Flag to kill foreground process (Ctrl+C)
-    uint16_t foreground_pid;    // PID of the current foreground process (0 = none)
+    int16_t remaining_quantum;      // Changed to int16_t to support larger quantum values
+    int16_t initial_quantum;        // Quantum assigned at start of time slice
+    uint8_t kill_fg_flag;           // Flag to kill foreground process (Ctrl+C)
+    uint16_t foreground_pid;        // PID of the current foreground process (0 = none)
     uint8_t current_priority_level; // Current priority level for round-robin rotation
 } Scheduler;
 
@@ -91,8 +91,8 @@ void scheduler_init()
     scheduler.next_unused_pid = 0;
     scheduler.num_processes = 0;
     scheduler.remaining_quantum = 1;
-    scheduler.foreground_pid = 0;  // No foreground process initially
-    scheduler.current_priority_level = NUM_PRIORITIES - 1;  // Start at highest priority
+    scheduler.foreground_pid = 0;                          // No foreground process initially
+    scheduler.current_priority_level = NUM_PRIORITIES - 1; // Start at highest priority
 }
 
 // Find next ready process using round-robin priority rotation
@@ -132,19 +132,40 @@ int16_t create_process(MainFunction code, char **args, char *name,
 
     // Allocate PCB
     Process *process = (Process *)mm_alloc(sizeof(Process));
-    init_process(process, scheduler.next_unused_pid, scheduler.current_pid,
-                 code, args, name, priority, fds, unkillable);
+    if (process == NULL)
+    {
+        return -1;
+    }
+
+    if (init_process(process, scheduler.next_unused_pid, scheduler.current_pid,
+                     code, args, name, priority, fds, unkillable) != 0)
+    {
+        mm_free(process);
+        return -1;
+    }
 
     // Add to scheduler
     Node *node;
     if (process->pid != IDLE_PID)
     {
         node = list_append(&scheduler.ready_queues[priority], process);
+        if (node == NULL)
+        {
+            free_process(process);
+            mm_free(process);
+            return -1;
+        }
     }
     else
     {
         // IDLE is special - manual node, not in queue
         node = (Node *)mm_alloc(sizeof(Node));
+        if (node == NULL)
+        {
+            free_process(process);
+            mm_free(process);
+            return -1;
+        }
         node->data = process;
         node->prev = node->next = NULL;
     }
@@ -179,6 +200,14 @@ int8_t set_priority(uint16_t pid, uint8_t new_priority)
 
         // Add to new queue
         node = list_append(&scheduler.ready_queues[new_priority], process);
+        if (node == NULL)
+        {
+            scheduler.processes[pid] = NULL;
+            scheduler.num_processes--;
+            free_process(process);
+            mm_free(process);
+            return -1;
+        }
         scheduler.processes[pid] = node;
     }
 
@@ -225,6 +254,14 @@ int8_t set_status(uint16_t pid, ProcessStatus new_status)
         // Move to blocked queue (remove from old priority queue)
         list_remove(&scheduler.ready_queues[old_priority], node);
         node = list_append(&scheduler.blocked_queue, process);
+        if (node == NULL)
+        {
+            scheduler.processes[pid] = NULL;
+            scheduler.num_processes--;
+            free_process(process);
+            mm_free(process);
+            return -1;
+        }
         scheduler.processes[pid] = node;
     }
     else if (old_status == BLOCKED && new_status == READY)
@@ -233,6 +270,14 @@ int8_t set_status(uint16_t pid, ProcessStatus new_status)
         list_remove(&scheduler.blocked_queue, node);
         process->priority = NUM_PRIORITIES - 1;
         node = list_prepend(&scheduler.ready_queues[process->priority], process);
+        if (node == NULL)
+        {
+            scheduler.processes[pid] = NULL;
+            scheduler.num_processes--;
+            free_process(process);
+            mm_free(process);
+            return -1;
+        }
         scheduler.processes[pid] = node;
         scheduler.remaining_quantum = 0; // Force reschedule
     }
@@ -272,7 +317,7 @@ int32_t kill_process(uint16_t pid, int32_t retval)
         Node *scheduler_node = scheduler.processes[zombie_pid];
 
         // Remove from parent's zombie list
-        list_remove(&process->zombie_children, zombie_node);  // This frees zombie_node from parent's list
+        list_remove(&process->zombie_children, zombie_node); // This frees zombie_node from parent's list
 
         // Remove from main process table and free the scheduler's node
         scheduler.processes[zombie_pid] = NULL;
@@ -280,7 +325,7 @@ int32_t kill_process(uint16_t pid, int32_t retval)
 
         // Free zombie child resources
         free_process(zombie_child);
-        mm_free(zombie_child);  // Free the Process structure
+        mm_free(zombie_child); // Free the Process structure
 
         // Free the node that was in scheduler.processes (this is the same as zombie_node since we updated it)
         // Note: zombie_node was already freed by list_remove, and it's the same as scheduler_node
@@ -299,7 +344,7 @@ int32_t kill_process(uint16_t pid, int32_t retval)
         {
             // It's a pipe - close it now to send EOF
             pipe_close_for_pid(pid, fd);
-            process->file_descriptors[i] = -1;  // Mark as closed
+            process->file_descriptors[i] = -1; // Mark as closed
         }
     }
 
@@ -322,6 +367,15 @@ int32_t kill_process(uint16_t pid, int32_t retval)
             // CRITICAL: list_append returns a new node, we must update scheduler.processes[pid]
             // to avoid use-after-free (the old node was freed by list_remove above)
             Node *zombie_node = list_append(&parent->zombie_children, process);
+            if (zombie_node == NULL)
+            {
+                // Can't add to zombie list - must auto-reap this orphan
+                scheduler.processes[pid] = NULL;
+                scheduler.num_processes--;
+                free_process(process);
+                mm_free(process);
+                return 0;
+            }
             scheduler.processes[pid] = zombie_node;
 
             // If parent is waiting for this specific child, unblock it
@@ -336,7 +390,7 @@ int32_t kill_process(uint16_t pid, int32_t retval)
             scheduler.processes[pid] = NULL;
             scheduler.num_processes--;
             free_process(process);
-            mm_free(process);  // Free the Process structure itself
+            mm_free(process); // Free the Process structure itself
             // NOTE: Don't free node - it was already freed by list_remove above
         }
     }
@@ -346,7 +400,7 @@ int32_t kill_process(uint16_t pid, int32_t retval)
         scheduler.processes[pid] = NULL;
         scheduler.num_processes--;
         free_process(process);
-        mm_free(process);  // Free the Process structure itself
+        mm_free(process); // Free the Process structure itself
         // NOTE: Don't free node - it was already freed by list_remove above
     }
 
@@ -410,7 +464,7 @@ void *schedule(void *current_rsp)
     // Check if we need to kill foreground process (Ctrl+C)
     if (scheduler.kill_fg_flag)
     {
-        scheduler.kill_fg_flag = 0;  // Clear flag
+        scheduler.kill_fg_flag = 0; // Clear flag
 
         // TP2_SO approach: Kill current process if it has STDIN
         // This is more reliable than tracking a separate foreground_pid
@@ -421,7 +475,7 @@ void *schedule(void *current_rsp)
             // Check if this process has access to keyboard (STDIN)
             if (current->file_descriptors[0] == STDIN)
             {
-                kill_current_process(-1);  // Kill with signal -1 (interrupted)
+                kill_current_process(-1); // Kill with signal -1 (interrupted)
             }
         }
     }
@@ -451,7 +505,7 @@ void *schedule(void *current_rsp)
         {
             current_process->status = READY;
 
-            uint8_t rotated = 0;  // Track if we already rotated via set_priority
+            uint8_t rotated = 0; // Track if we already rotated via set_priority
 
             // Process consumed entire quantum
             if (scheduler.remaining_quantum == 0 && scheduler.initial_quantum > 0)
@@ -467,7 +521,7 @@ void *schedule(void *current_rsp)
                 {
                     uint8_t new_priority = current_process->priority + 1;
                     set_priority(scheduler.current_pid, new_priority);
-                    rotated = 1;  // set_priority rotates the process
+                    rotated = 1; // set_priority rotates the process
 
                     // Reset counter after promotion
                     current_process->quantum_consumed_count = 0;
@@ -531,7 +585,7 @@ int32_t waitpid(uint16_t pid)
         Process *zombie = (Process *)zombie_node->data;
         if (zombie->pid == pid)
         {
-            list_remove(&parent->zombie_children, zombie_node);  // This already frees zombie_node
+            list_remove(&parent->zombie_children, zombie_node); // This already frees zombie_node
             break;
         }
         zombie_node = zombie_node->next;
@@ -541,12 +595,12 @@ int32_t waitpid(uint16_t pid)
     scheduler.processes[pid] = NULL;
     scheduler.num_processes--;
     free_process(child_process);
-    mm_free(child_process);  // Free the Process structure itself
+    mm_free(child_process); // Free the Process structure itself
     // NOTE: Don't free child_node - it's the same as zombie_node which was already freed by list_remove above
 
     // Clear waiting state and foreground status
     parent->waiting_for_pid = 0;
-    scheduler.foreground_pid = 0;  // No more foreground process
+    scheduler.foreground_pid = 0; // No more foreground process
 
     return retval;
 }
@@ -554,7 +608,7 @@ int32_t waitpid(uint16_t pid)
 // Get file descriptor for current process
 int16_t get_process_fd(uint8_t fd_index)
 {
-    if (fd_index >= 3)  // Only stdin(0), stdout(1), stderr(2)
+    if (fd_index >= 3) // Only stdin(0), stdout(1), stderr(2)
         return -1;
 
     if (scheduler.processes[scheduler.current_pid] == NULL)
