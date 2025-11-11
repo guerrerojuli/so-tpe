@@ -1,5 +1,5 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+
+
 #include <consoleDriver.h>
 #include <videoDriver.h>
 #include <interrupts.h>
@@ -7,7 +7,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-// Configuración básica
 #define TAB_SIZE 4
 #define SPACE_CHAR ' '
 #define NULL_CHAR '\0'
@@ -18,19 +17,16 @@
 #define DEFAULT_TEXT_COLOR 0xFFFFFF
 #define DEFAULT_BACKGROUND_COLOR 0x000000
 
-#define TAB_MASK (~3) // Para alinear tabs: (cursor_x + TAB_SIZE) & TAB_MASK
+#define TAB_MASK (~3)
 
-// Buffer de la consola con espacio extra para eficiencia
 #define CONSOLE_BUFFER_SIZE (CONSOLE_WIDTH * CONSOLE_HEIGHT * 2)
 #define MAX_VISIBLE_CHARS (CONSOLE_WIDTH * CONSOLE_HEIGHT)
 
-// Macros para validar posiciones
 #define IS_VALID_CONSOLE_X(x) ((x) < CONSOLE_WIDTH)
 #define IS_VALID_CONSOLE_Y(y) ((y) < CONSOLE_HEIGHT)
 #define IS_VALID_CONSOLE_POS(x, y) (IS_VALID_CONSOLE_X(x) && IS_VALID_CONSOLE_Y(y))
 #define IS_VALID_BUFFER_POS(pos) ((pos) < buffer_length && (pos) >= 0)
 
-// Estructura para trackear posición durante el renderizado
 typedef struct
 {
     uint64_t screen_x;
@@ -38,7 +34,6 @@ typedef struct
     uint64_t current_line;
 } render_position_t;
 
-// Declaraciones de funciones
 static uint64_t console_calculate_visible_start(void);
 static void console_add_char(char c, uint64_t color);
 static void console_backspace(void);
@@ -49,19 +44,11 @@ static void console_render_all(void);
 static void console_scroll_fast(uint64_t old_visible_start, uint64_t new_visible_start);
 static inline bool should_render_char(char c);
 
-// Estado global de la consola
 static console_char_t console_buffer[CONSOLE_BUFFER_SIZE];
 static uint64_t buffer_length = 0;
 static uint64_t cursor_position = 0;
-static uint64_t last_visible_start = 0; // Para detectar cuando hay scroll
+static uint64_t last_visible_start = 0;
 
-//=============================================================================
-// BUFFER CALCULATION FUNCTIONS
-//=============================================================================
-
-// Funciones para calcular posiciones en el buffer
-
-// Cuenta líneas y maneja el wrapping hasta una posición específica
 static void count_lines_to_position(uint64_t target_pos, uint64_t *line_count, uint64_t *final_x)
 {
     uint64_t current_line = 0;
@@ -101,7 +88,6 @@ static void count_lines_to_position(uint64_t target_pos, uint64_t *line_count, u
     *final_x = current_x;
 }
 
-// Encuentra la posición en el buffer para una línea específica
 static uint64_t find_buffer_position_for_line(uint64_t target_line)
 {
     uint64_t line_count = 0;
@@ -142,7 +128,6 @@ static uint64_t find_buffer_position_for_line(uint64_t target_line)
     return pos;
 }
 
-// Calcula desde dónde debe empezar a mostrar el buffer (para scroll)
 static uint64_t console_calculate_visible_start(void)
 {
     uint64_t lines_per_screen = get_screen_height_pixels() / get_font_height();
@@ -150,17 +135,14 @@ static uint64_t console_calculate_visible_start(void)
     uint64_t cursor_line, cursor_x;
     count_lines_to_position(cursor_position, &cursor_line, &cursor_x);
 
-    // Si el cursor está fuera del área visible, calcular scroll
     if (cursor_line >= lines_per_screen)
     {
         uint64_t target_line = cursor_line - lines_per_screen + 1;
         return find_buffer_position_for_line(target_line);
     }
 
-    return 0; // No necesita scroll
+    return 0;
 }
-
-// Helpers para renderizado
 
 static inline bool should_render_char(char c)
 {
@@ -172,10 +154,9 @@ static void console_render_from_position(uint64_t start_pos)
     console_render_range(start_pos, buffer_length);
 }
 
-// Renderiza un rango específico del buffer de consola
 static void console_render_range(uint64_t start_pos, uint64_t end_pos)
 {
-    // Obtenemos las dimensiones una sola vez
+
     uint64_t font_width = get_font_width();
     uint64_t font_height = get_font_height();
     uint64_t screen_width = get_screen_width_pixels();
@@ -184,12 +165,10 @@ static void console_render_range(uint64_t start_pos, uint64_t end_pos)
     render_position_t pos;
     uint64_t visible_start = console_calculate_visible_start();
 
-    // Inicializar posición
     pos.screen_x = 0;
     pos.screen_y = 0;
     pos.current_line = 0;
 
-    // Calcular posición hasta start_pos
     for (uint64_t p = visible_start; p < start_pos && p < buffer_length && pos.current_line < lines_per_screen; p++)
     {
         char c = console_buffer[p].c;
@@ -225,7 +204,6 @@ static void console_render_range(uint64_t start_pos, uint64_t end_pos)
         }
     }
 
-    // Renderizar el rango pedido
     for (uint64_t buffer_pos = start_pos;
          buffer_pos < end_pos && buffer_pos < buffer_length && pos.current_line < lines_per_screen;
          buffer_pos++)
@@ -234,10 +212,9 @@ static void console_render_range(uint64_t start_pos, uint64_t end_pos)
         char c = console_buffer[buffer_pos].c;
         uint64_t color = console_buffer[buffer_pos].color;
 
-        // Renderizar carácter
         if (c == NEWLINE_CHAR)
         {
-            // Limpiar hasta el final de la línea
+
             if (pos.screen_x < screen_width)
             {
                 draw_rect(DEFAULT_BACKGROUND_COLOR, pos.screen_x, pos.screen_y,
@@ -246,13 +223,13 @@ static void console_render_range(uint64_t start_pos, uint64_t end_pos)
         }
         else if (c == TAB_CHAR)
         {
-            // Limpiar área del tab
+
             draw_rect(DEFAULT_BACKGROUND_COLOR, pos.screen_x, pos.screen_y,
                       font_width, font_height);
         }
         else
         {
-            // Limpiar área y renderizar si es necesario
+
             draw_rect(DEFAULT_BACKGROUND_COLOR, pos.screen_x, pos.screen_y,
                       font_width, font_height);
 
@@ -262,7 +239,6 @@ static void console_render_range(uint64_t start_pos, uint64_t end_pos)
             }
         }
 
-        // Avanzar posición
         if (c == NEWLINE_CHAR)
         {
             pos.current_line++;
@@ -295,7 +271,6 @@ static void console_render_range(uint64_t start_pos, uint64_t end_pos)
     }
 }
 
-// Renderiza solo contenido nuevo (para updates incrementales)
 static void console_render_incremental(uint64_t from_pos)
 {
     if (from_pos >= buffer_length)
@@ -311,7 +286,6 @@ static void console_render_incremental(uint64_t from_pos)
     _sti();
 }
 
-// Renderiza toda la consola visible (para scroll o refresh completo)
 static void console_render_all(void)
 {
     uint64_t start_pos = console_calculate_visible_start();
@@ -325,7 +299,6 @@ static void console_render_all(void)
     _sti();
 }
 
-// Scroll rápido moviendo píxeles en lugar de re-renderizar todo
 static void console_scroll_fast(uint64_t old_visible_start, uint64_t new_visible_start)
 {
     if (old_visible_start == new_visible_start)
@@ -337,14 +310,12 @@ static void console_scroll_fast(uint64_t old_visible_start, uint64_t new_visible
     uint64_t screen_width = get_screen_width_pixels();
     uint64_t screen_height = get_screen_height_pixels();
 
-    // Calcular cuántas líneas estamos scrolleando
     uint64_t old_line = 0, new_line = 0, temp_x;
     count_lines_to_position(old_visible_start, &old_line, &temp_x);
     count_lines_to_position(new_visible_start, &new_line, &temp_x);
 
     uint64_t lines_scrolled = (new_line > old_line) ? (new_line - old_line) : 0;
 
-    // Si el scroll es muy grande, mejor hacer render completo
     if (lines_scrolled == 0 || lines_scrolled > 10)
     {
         console_render_all();
@@ -353,7 +324,6 @@ static void console_scroll_fast(uint64_t old_visible_start, uint64_t new_visible
 
     uint64_t scroll_pixels = lines_scrolled * font_height;
 
-    // Si scrollea más de la mitad de la pantalla, render completo es más rápido
     if (scroll_pixels >= screen_height / 2)
     {
         console_render_all();
@@ -362,12 +332,10 @@ static void console_scroll_fast(uint64_t old_visible_start, uint64_t new_visible
 
     _cli();
 
-    // Acceso directo al back buffer
     uint8_t *back_buffer = get_back_buffer();
-    uint64_t bytes_per_pixel = 3; // RGB
+    uint64_t bytes_per_pixel = 3;
     uint64_t pitch = screen_width * bytes_per_pixel;
 
-    // Mover el contenido existente hacia arriba
     uint64_t remaining_height = screen_height - scroll_pixels;
     if (remaining_height > 0)
     {
@@ -376,7 +344,6 @@ static void console_scroll_fast(uint64_t old_visible_start, uint64_t new_visible
                 remaining_height * pitch);
     }
 
-    // Limpiar el área de abajo donde va el contenido nuevo
     uint8_t bg_blue = DEFAULT_BACKGROUND_COLOR & 0xFF;
     uint8_t bg_green = (DEFAULT_BACKGROUND_COLOR >> 8) & 0xFF;
     uint8_t bg_red = (DEFAULT_BACKGROUND_COLOR >> 16) & 0xFF;
@@ -394,16 +361,11 @@ static void console_scroll_fast(uint64_t old_visible_start, uint64_t new_visible
 
     _sti();
 
-    // En lugar de calcular qué líneas renderizar, renderizamos todo lo visible
-    // para asegurarnos de que sea correcto
     console_render_from_position(new_visible_start);
 
     swap_buffers();
 }
 
-// Manejo del buffer de consola
-
-// Cuando el buffer se llena, movemos contenido hacia la izquierda
 static void handle_buffer_overflow(void)
 {
     uint64_t shift_amount = CONSOLE_BUFFER_SIZE / 4;
@@ -413,15 +375,12 @@ static void handle_buffer_overflow(void)
     cursor_position -= shift_amount;
 }
 
-/**
- * Inserts character at cursor position in buffer
- */
 static void insert_char_at_cursor(char c, uint64_t color)
 {
-    // Insert character at cursor position
+
     if (cursor_position < buffer_length)
     {
-        // Insert in middle - shift content right
+
         memmove(&console_buffer[cursor_position + 1], &console_buffer[cursor_position],
                 (buffer_length - cursor_position) * sizeof(console_char_t));
     }
@@ -432,9 +391,6 @@ static void insert_char_at_cursor(char c, uint64_t color)
     cursor_position++;
 }
 
-/**
- * Add character to console buffer with overflow handling
- */
 static void console_add_char(char c, uint64_t color)
 {
     if (buffer_length >= CONSOLE_BUFFER_SIZE - 1)
@@ -445,19 +401,15 @@ static void console_add_char(char c, uint64_t color)
     insert_char_at_cursor(c, color);
 }
 
-/**
- * Handle backspace character with proper cleanup
- */
 static void console_backspace(void)
 {
     if (cursor_position == 0)
     {
-        return; // Nothing to delete
+        return;
     }
 
     cursor_position--;
 
-    // Remove character by shifting left
     if (cursor_position < buffer_length - 1)
     {
         memmove(&console_buffer[cursor_position], &console_buffer[cursor_position + 1],
@@ -465,8 +417,6 @@ static void console_backspace(void)
     }
     buffer_length--;
 }
-
-// API pública de la consola
 
 void console_write(const char *data, uint64_t data_len, uint64_t color)
 {
@@ -478,13 +428,12 @@ void console_write(const char *data, uint64_t data_len, uint64_t color)
     uint64_t start_cursor = cursor_position;
     uint64_t start_visible = console_calculate_visible_start();
 
-    // Procesar todos los caracteres
     for (uint64_t i = 0; i < data_len; i++)
     {
         if (data[i] == BACKSPACE_CHAR)
         {
             console_backspace();
-            // Para backspace necesitamos render completo
+
             console_render_all();
             last_visible_start = console_calculate_visible_start();
             return;
@@ -495,17 +444,16 @@ void console_write(const char *data, uint64_t data_len, uint64_t color)
         }
     }
 
-    // Ver si hubo scroll
     uint64_t new_visible_start = console_calculate_visible_start();
     if (new_visible_start != start_visible)
     {
-        // Hubo scroll - usar scroll rápido
+
         console_scroll_fast(last_visible_start, new_visible_start);
         last_visible_start = new_visible_start;
     }
     else
     {
-        // No hubo scroll - render incremental
+
         console_render_incremental(start_cursor);
     }
 }

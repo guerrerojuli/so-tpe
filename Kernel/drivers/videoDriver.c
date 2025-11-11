@@ -1,5 +1,5 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -7,13 +7,9 @@
 #include <font.h>
 #include <lib.h>
 
-// CONSTANTS
-
 #define DEFAULT_FONT_SIZE 1
 #define MAX_FONT_SIZE 5
 #define MIN_FONT_SIZE 1
-
-// VBE MODE INFORMATION STRUCTURE
 
 struct vbe_mode_info_structure
 {
@@ -53,15 +49,14 @@ struct vbe_mode_info_structure
 } __attribute__((packed));
 
 typedef struct vbe_mode_info_structure *VBEInfoPtr;
-// 0x5C00 is the address where the bootloader stores VBE information
+
 VBEInfoPtr VBE_mode_info = (VBEInfoPtr)0x0000000000005C00;
 
 static uint64_t font_size = DEFAULT_FONT_SIZE;
 
-// Double buffering - always enabled
 #define MAX_WIDTH 1024
 #define MAX_HEIGHT 768
-// 3 bytes per pixel (RGB) for maximum supported resolution
+
 static uint8_t static_back_buffer[MAX_WIDTH * MAX_HEIGHT * 3];
 static uint8_t *back_buffer = static_back_buffer;
 
@@ -70,7 +65,6 @@ void swap_buffers(void)
     uint8_t *framebuffer = (uint8_t *)(uint64_t)VBE_mode_info->framebuffer;
     uint64_t buffer_size = VBE_mode_info->width * VBE_mode_info->height * 3;
 
-    // Fast memory copy of entire buffer using memcpy
     memcpy(framebuffer, back_buffer, buffer_size);
 }
 
@@ -105,9 +99,9 @@ void put_pixel(uint64_t color, uint64_t x, uint64_t y)
     }
 
     uint64_t offset = (x * 3) + (y * VBE_mode_info->pitch);
-    back_buffer[offset] = color & 0xFF;             // Blue
-    back_buffer[offset + 1] = (color >> 8) & 0xFF;  // Green
-    back_buffer[offset + 2] = (color >> 16) & 0xFF; // Red
+    back_buffer[offset] = color & 0xFF;
+    back_buffer[offset + 1] = (color >> 8) & 0xFF;
+    back_buffer[offset + 2] = (color >> 16) & 0xFF;
 }
 
 void draw_rect(uint64_t color, uint64_t x, uint64_t y, uint64_t width, uint64_t height)
@@ -137,7 +131,7 @@ void draw_char_with_size(char c, uint64_t color, uint64_t x, uint64_t y, uint64_
         {
             if (font_row & (1 << col))
             {
-                // Draw scaled pixel
+
                 for (uint64_t sy = 0; sy < size; sy++)
                 {
                     for (uint64_t sx = 0; sx < size; sx++)

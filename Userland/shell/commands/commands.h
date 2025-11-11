@@ -3,19 +3,19 @@
 
 #define MAX_ARGS 10
 
-// Estructura para definir comandos
+ 
 typedef struct
 {
     char *name;
-    int (*func)(int argc, char **argv);  // Changed to match MainFunction signature
+    int (*func)(int argc, char **argv);   
     char *description;
 } command;
 
-// Variables globales para parsear comandos (definidas en shell.c)
+ 
 extern char *current_args[MAX_ARGS];
 extern int arg_count;
 
-// Declaraciones de funciones de comandos
+ 
 extern command clear_cmd;
 extern command help_cmd;
 extern command test_synchro_cmd;
@@ -32,7 +32,7 @@ extern command mem_cmd;
 extern command filter_cmd;
 extern command mvar_cmd;
 
-// Array de todos los comandos (definido en shell.c)
+ 
 extern command *all_commands[];
 
-#endif /* COMMANDS_H */
+#endif  

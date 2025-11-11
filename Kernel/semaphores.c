@@ -1,5 +1,5 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+
+
 #include <lib.h>
 #include <list.h>
 #include <memoryManager.h>
@@ -16,9 +16,9 @@ typedef uint16_t sem_t;
 typedef struct Semaphore
 {
 	uint32_t value;
-	int mutex;						// 0 libre, 1 ocupado
-	List *semaphoreQueue; // List de pids
-	List *mutexQueue;			// List de pids
+	int mutex;
+	List *semaphoreQueue;
+	List *mutexQueue;
 } Semaphore;
 
 static Semaphore *createSemaphore(uint32_t initialValue);
@@ -148,7 +148,6 @@ static Semaphore *createSemaphore(uint32_t initialValue)
 	sem->value = initialValue;
 	sem->mutex = 0;
 
-	// Allocate and initialize the semaphore queue
 	sem->semaphoreQueue = (List *)mm_alloc(sizeof(List));
 	if (sem->semaphoreQueue == NULL)
 	{
@@ -157,7 +156,6 @@ static Semaphore *createSemaphore(uint32_t initialValue)
 	}
 	list_init(sem->semaphoreQueue);
 
-	// Allocate and initialize the mutex queue
 	sem->mutexQueue = (List *)mm_alloc(sizeof(List));
 	if (sem->mutexQueue == NULL)
 	{
@@ -175,7 +173,6 @@ static void freeSemaphore(Semaphore *sem)
 	if (!sem)
 		return;
 
-	// Free all nodes in semaphoreQueue
 	if (sem->semaphoreQueue)
 	{
 		Node *current = sem->semaphoreQueue->head;
@@ -188,7 +185,6 @@ static void freeSemaphore(Semaphore *sem)
 		mm_free(sem->semaphoreQueue);
 	}
 
-	// Free all nodes in mutexQueue
 	if (sem->mutexQueue)
 	{
 		Node *current = sem->mutexQueue->head;
@@ -221,9 +217,8 @@ static void acquireMutex(Semaphore *sem)
 
 static int process_is_alive(uint16_t pid)
 {
-	// Simple check - processes are alive if they exist in the scheduler
-	// You may need to expand this based on your scheduler implementation
-	return pid > 0; // For now, assume all non-zero PIDs are alive
+
+	return pid > 0;
 }
 
 static void resumeFirstAvailableProcess(List *queue)
@@ -231,7 +226,7 @@ static void resumeFirstAvailableProcess(List *queue)
 	Node *current;
 	while ((current = list_get_first(queue)) != NULL)
 	{
-		// list_remove frees the node and returns the data
+
 		void *data = list_remove(queue, current);
 		uint16_t pid = (uint16_t)((uint64_t)data);
 		if (process_is_alive(pid))
@@ -259,7 +254,7 @@ static int up(Semaphore *sem)
 	}
 	resumeFirstAvailableProcess(sem->semaphoreQueue);
 	releaseMutex(sem);
-	// yield();
+
 	return 0;
 }
 
@@ -272,7 +267,7 @@ static int down(Semaphore *sem)
 		Node *node = list_append(sem->semaphoreQueue, (void *)((uint64_t)pid));
 		if (node == NULL)
 		{
-			// Critical: Can't add to semaphore queue
+
 			releaseMutex(sem);
 			return -1;
 		}

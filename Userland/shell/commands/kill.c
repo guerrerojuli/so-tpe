@@ -1,6 +1,6 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-//-V:printf:111,576,618,719,303
+ 
+ 
+ 
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -14,7 +14,7 @@ int kill_main(int argc, char **argv) {
         return 1;
     }
 
-    // Convert string PID to integer
+     
     int pid = atoi(argv[1]);
     if (pid <= 0) {
         args[0] = argv[1];
@@ -22,9 +22,9 @@ int kill_main(int argc, char **argv) {
         return 1;
     }
 
-    // Call kill_process syscall
-    // Cast to int64_t first to properly handle sign-extended error codes
-    int64_t result = (int64_t)sys_kill_process(pid, -1);  // -1 as signal (killed by user)
+     
+     
+    int64_t result = (int64_t)sys_kill_process(pid, -1);   
 
     if (result < 0) {
         args[0] = (void*)&pid;

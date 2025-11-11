@@ -1,5 +1,5 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ 
+ 
 #include "stdint.h"
 #include "stdio.h"
 #include "stddef.h"
@@ -19,7 +19,7 @@ typedef struct P_rq
   enum TestState state;
 } p_rq;
 
-// Dummy process function that yields in a loop
+ 
 uint64_t endless_loop_func(uint64_t argc, char *argv[])
 {
   while (1)
@@ -49,7 +49,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
   while (1)
   {
 
-    // Create max_processes processes
+     
     for (rq = 0; rq < max_processes; rq++)
     {
       p_rqs[rq].pid = sys_create_process((uint64_t)&endless_loop_func, (uint64_t)argvAux, (uint64_t)"endless_loop", 0, (uint64_t)default_fds);
@@ -66,7 +66,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
       }
     }
 
-    // Randomly kills, blocks or unblocks processes until every one has been killed
+     
     while (alive > 0)
     {
 
@@ -103,7 +103,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
         }
       }
 
-      // Randomly unblocks processes
+       
       for (rq = 0; rq < max_processes; rq++)
         if (p_rqs[rq].state == TEST_BLOCKED && GetUniform(100) % 2)
         {

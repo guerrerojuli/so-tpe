@@ -3,14 +3,12 @@
 
 #include <stdint.h>
 
-// Default to FIRSTFIT if neither is defined
 #if !defined(FIRSTFIT) && !defined(BUDDY)
 #define FIRSTFIT
 #endif
 
 #include "memoryManagerInterface.h"
 
-// Entry-Based Memory Manager structures
 typedef struct _KHEAPHDRLCAB
 {
     uint32_t prevsize;
@@ -32,26 +30,19 @@ typedef struct _KHEAPLCAB
     uint32_t bcnt;
 } KHEAPLCAB;
 
-// Entry-Based Memory Manager functions
 void k_heapLCABInit(KHEAPLCAB *heap);
 int k_heapLCABAddBlock(KHEAPLCAB *heap, uintptr_t addr, uint32_t size);
 void *k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size);
 void k_heapLCABFree(KHEAPLCAB *heap, void *ptr);
 
-// ============================================
-// Buddy Memory Manager
-// ============================================
-
 #define MAX_ORDER 10
 
-// Nodo de lista doblemente enlazada
 typedef struct list_node
 {
     struct list_node *next;
     struct list_node *prev;
 } list_node_t;
 
-// Estructura de página
 typedef struct page
 {
     list_node_t free_list_node;
@@ -60,14 +51,12 @@ typedef struct page
     uint64_t frame_number;
 } page_t;
 
-// Lista de bloques libres para cada orden
 typedef struct free_area
 {
     list_node_t free_list_head;
     uint64_t free_block_count;
 } free_area_t;
 
-// Zona de memoria
 typedef struct zone
 {
     free_area_t free_lists[MAX_ORDER + 1];
@@ -76,14 +65,12 @@ typedef struct zone
     uintptr_t heap_base;
 } zone_t;
 
-// Buddy Memory Manager functions
 void buddy_free_pages(page_t *page, int order);
 page_t *buddy_alloc_pages(int order);
 void buddy_add_memory(uint64_t nr_pages);
 
-// Conditional externs based on selected memory manager
 #ifdef FIRSTFIT
 extern KHEAPLCAB kernel_heap;
 #endif
 
-#endif // MEMORY_MANAGER_H
+#endif

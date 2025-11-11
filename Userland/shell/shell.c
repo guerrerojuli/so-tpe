@@ -1,9 +1,9 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ 
+ 
 
-// PVS-Studio: Suppress warnings for custom printf/scanf implementation
-//-V:printf:111,576,618,719,303
-//-V:scanf:111,576,618,719,303
+ 
+ 
+ 
 
 #include "unistd.h"
 #include "stdio.h"
@@ -15,7 +15,7 @@
 #define MAX_COMMAND_LENGTH 256
 #define MAX_PIPE_COMMANDS 2
 
-// Command parsing structure
+ 
 typedef struct {
     char *name;
     char *args[MAX_ARGS];
@@ -28,12 +28,12 @@ typedef struct {
     int is_background;
 } ParsedInput;
 
-// Global variables for backward compatibility with existing commands
+ 
 char input_buffer[MAX_COMMAND_LENGTH];
 char *current_args[MAX_ARGS];
 int arg_count = 0;
 
-// Import existing commands
+ 
 extern command clear_cmd;
 extern command help_cmd;
 extern command test_synchro_cmd;
@@ -42,7 +42,7 @@ extern command test_processes_cmd;
 extern command test_mm_cmd;
 extern command ps_cmd;
 
-// Import new commands
+ 
 extern command loop_cmd;
 extern command kill_cmd;
 extern command nice_cmd;
@@ -52,7 +52,7 @@ extern command mem_cmd;
 extern command filter_cmd;
 extern command mvar_cmd;
 
-// Array of all commands
+ 
 command *all_commands[] = {
     &clear_cmd,
     &help_cmd,
@@ -70,10 +70,10 @@ command *all_commands[] = {
     &mem_cmd,
     &filter_cmd,
     &mvar_cmd,
-    NULL // Terminator
+    NULL  
 };
 
-// Find command by name
+ 
 command* find_command(char *name) {
     for (int i = 0; all_commands[i] != NULL; i++) {
         if (strcmp(name, all_commands[i]->name) == 0) {
@@ -83,24 +83,24 @@ command* find_command(char *name) {
     return NULL;
 }
 
-// Parse a single command (tokenize by spaces)
+ 
 void parse_single_command(char *input, Command *cmd) {
     cmd->arg_count = 0;
     cmd->name = NULL;
 
-    // Skip leading spaces
+     
     while (*input == ' ' || *input == '\t') input++;
 
     if (*input == '\0') return;
 
-    // Use strtok to parse
+     
     char *token = strtok(input, " \t");
     if (token == NULL) return;
 
     cmd->name = token;
     cmd->args[cmd->arg_count++] = token;
 
-    // Get remaining arguments
+     
     while ((token = strtok(NULL, " \t")) != NULL && cmd->arg_count < MAX_ARGS - 1) {
         cmd->args[cmd->arg_count++] = token;
     }
@@ -108,36 +108,36 @@ void parse_single_command(char *input, Command *cmd) {
     cmd->args[cmd->arg_count] = NULL;
 }
 
-// Parse input with pipe and background support
+ 
 void parse_input(char *input, ParsedInput *parsed) {
     parsed->command_count = 0;
     parsed->is_background = 0;
 
-    // Check for background operator at the end
+     
     size_t len = strlen(input);
     if (len > 0 && input[len - 1] == '&') {
         parsed->is_background = 1;
-        input[len - 1] = '\0';  // Remove '&'
+        input[len - 1] = '\0';   
         len--;
 
-        // Remove trailing spaces
+         
         while (len > 0 && (input[len - 1] == ' ' || input[len - 1] == '\t')) {
             input[--len] = '\0';
         }
     }
 
-    // Check for pipe operator
+     
     char *pipe_pos = strchr(input, '|');
     if (pipe_pos != NULL) {
-        *pipe_pos = '\0';  // Split at pipe
+        *pipe_pos = '\0';   
 
-        // Parse first command
+         
         parse_single_command(input, &parsed->commands[0]);
         if (parsed->commands[0].name != NULL) {
             parsed->command_count = 1;
         }
 
-        // Parse second command (skip spaces after pipe)
+         
         char *cmd2 = pipe_pos + 1;
         while (*cmd2 == ' ' || *cmd2 == '\t') cmd2++;
 
@@ -148,7 +148,7 @@ void parse_input(char *input, ParsedInput *parsed) {
             }
         }
     } else {
-        // Single command
+         
         parse_single_command(input, &parsed->commands[0]);
         if (parsed->commands[0].name != NULL) {
             parsed->command_count = 1;
@@ -156,7 +156,7 @@ void parse_input(char *input, ParsedInput *parsed) {
     }
 }
 
-// Execute a single command (built-in)
+ 
 void execute_builtin_command(Command *cmd, int is_background) {
     command *cmd_ptr = find_command(cmd->name);
     if (cmd_ptr == NULL) {
@@ -165,15 +165,15 @@ void execute_builtin_command(Command *cmd, int is_background) {
         return;
     }
 
-    // Set global args for backward compatibility
+     
     arg_count = cmd->arg_count;
     for (int i = 0; i < arg_count; i++) {
         current_args[i] = cmd->args[i];
     }
     current_args[arg_count] = NULL;
 
-    // For now, execute directly (no process creation yet for built-in commands)
-    // TODO: When we have proper process creation, use create_process_with_fds
+     
+     
     if (is_background) {
         printf("Background execution not yet supported for built-in commands\n", NULL);
         cmd_ptr->func(arg_count, current_args);
@@ -182,7 +182,7 @@ void execute_builtin_command(Command *cmd, int is_background) {
     }
 }
 
-// Execute a single command with process creation
+ 
 void execute_single_command(Command *cmd, int is_background) {
     command *cmd_ptr = find_command(cmd->name);
     if (cmd_ptr == NULL) {
@@ -191,7 +191,7 @@ void execute_single_command(Command *cmd, int is_background) {
         return;
     }
 
-    // Set global args for backward compatibility
+     
     arg_count = cmd->arg_count;
     for (int i = 0; i < arg_count; i++) {
         current_args[i] = cmd->args[i];
@@ -199,13 +199,13 @@ void execute_single_command(Command *cmd, int is_background) {
     current_args[arg_count] = NULL;
 
     if (is_background) {
-        // Background process: redirect stdin to DEV_NULL
+         
         int16_t fds[3] = {DEV_NULL, STDOUT, STDERR};
         int64_t pid = create_process_with_fds((void *)cmd_ptr->func,
                                               cmd->args, cmd->name,
-                                              1, fds);  // Priority 1
+                                              1, fds);   
         if (pid < 0) {
-            // Process creation not supported, run directly
+             
             printf("Note: Running directly (process creation not available)\n", NULL);
             cmd_ptr->func(arg_count, current_args);
         } else {
@@ -214,13 +214,13 @@ void execute_single_command(Command *cmd, int is_background) {
             printf("[%d] Started in background\n", args);
         }
     } else {
-        // Foreground process: normal stdin, wait for completion
+         
         int16_t fds[3] = {STDIN, STDOUT, STDERR};
         int64_t pid = create_process_with_fds((void *)cmd_ptr->func,
                                               cmd->args, cmd->name,
-                                              1, fds);  // Priority 1
+                                              1, fds);   
         if (pid < 0) {
-            // Process creation not supported, run directly
+             
             cmd_ptr->func(arg_count, current_args);
         } else {
             if (waitpid((uint16_t)pid) < 0) {
@@ -230,7 +230,7 @@ void execute_single_command(Command *cmd, int is_background) {
     }
 }
 
-// Execute piped commands
+ 
 void execute_piped_commands(ParsedInput *parsed) {
     command *cmd1_ptr = find_command(parsed->commands[0].name);
     command *cmd2_ptr = find_command(parsed->commands[1].name);
@@ -244,24 +244,24 @@ void execute_piped_commands(ParsedInput *parsed) {
         return;
     }
 
-    // Create pipe
+     
     int16_t pipe_id = pipe_get();
     if (pipe_id < 0) {
         printf("Failed to create pipe (may not be implemented yet)\n", NULL);
-        // Fallback: execute sequentially
+         
         execute_single_command(&parsed->commands[0], 0);
         execute_single_command(&parsed->commands[1], 0);
         return;
     }
 
-    // First process: stdout -> pipe
+     
     int16_t fds1[3] = {
         parsed->is_background ? DEV_NULL : STDIN,
-        pipe_id,  // stdout to pipe
+        pipe_id,   
         STDERR
     };
 
-    // Set global args for first command
+     
     arg_count = parsed->commands[0].arg_count;
     for (int i = 0; i < arg_count; i++) {
         current_args[i] = parsed->commands[0].args[i];
@@ -277,14 +277,14 @@ void execute_piped_commands(ParsedInput *parsed) {
         return;
     }
 
-    // Second process: stdin <- pipe
+     
     int16_t fds2[3] = {
-        pipe_id,  // stdin from pipe
+        pipe_id,   
         STDOUT,
         STDERR
     };
 
-    // Set global args for second command
+     
     arg_count = parsed->commands[1].arg_count;
     for (int i = 0; i < arg_count; i++) {
         current_args[i] = parsed->commands[1].args[i];
@@ -297,7 +297,7 @@ void execute_piped_commands(ParsedInput *parsed) {
 
     if (pid2 < 0) {
         printf("Failed to create second process in pipe\n", NULL);
-        // Kill first process to avoid orphan
+         
         sys_kill_process((uint16_t)pid1, -1);
         return;
     }
@@ -308,8 +308,8 @@ void execute_piped_commands(ParsedInput *parsed) {
         void *pargs[2] = {&p1, &p2};
         printf("[%d,%d] Pipeline started in background\n", pargs);
     } else {
-        // Wait for both processes to prevent zombies
-        // When pid1 exits, it closes the pipe, causing pid2 to receive EOF and exit naturally
+         
+         
         if (waitpid((uint16_t)pid1) < 0) {
             printf("Warning: failed to wait for first process in pipe\n", NULL);
         }
@@ -319,41 +319,41 @@ void execute_piped_commands(ParsedInput *parsed) {
     }
 }
 
-// Main shell loop
+ 
 void shell_loop(void) {
     ParsedInput parsed;
 
     while (1) {
-        // Show prompt
+         
         printf("$ ", NULL);
 
-        // Read input (STDIN is 0, not a null pointer)
-        //-V:fgets:575
+         
+         
         if (fgets(input_buffer, MAX_COMMAND_LENGTH, STDIN) != NULL) {
-            // Remove newline
+             
             size_t len = strlen(input_buffer);
             if (len > 0 && input_buffer[len - 1] == '\n') {
                 input_buffer[len - 1] = '\0';
                 len--;
             }
 
-            // Skip empty lines
+             
             if (len == 0) continue;
 
-            // Parse input
+             
             parse_input(input_buffer, &parsed);
 
-            // Execute based on command structure
+             
             if (parsed.command_count == 2) {
-                // Piped commands
+                 
                 execute_piped_commands(&parsed);
             } else if (parsed.command_count == 1) {
-                // Single command
+                 
                 execute_single_command(&parsed.commands[0],
                                       parsed.is_background);
             }
         } else {
-            // EOF or error
+             
             printf("\nExiting shell...\n", NULL);
             break;
         }

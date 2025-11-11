@@ -1,5 +1,5 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+
+
 #include <stdint.h>
 #include <string.h>
 #include <lib.h>
@@ -26,13 +26,8 @@ static const uint64_t PageSize = 0x1000;
 #define STACK_PAGES 8
 #define STACK_SIZE (PageSize * STACK_PAGES)
 
-// Definimos las direcciones de userland directamente aquí para claridad
-// Estas deben coincidir con lo que espera el linker y start_userland.asm
 #define SHELL_CODE_START ((void *)0xA00000)
 
-// Eliminamos las declaraciones extern ya que las definimos arriba
-// extern void *USERLAND_CODE_ADDRESS;
-// extern void *USERLAND_DATA_ADDRESS;
 extern void start_userland();
 
 typedef int (*EntryPoint)();
@@ -47,9 +42,7 @@ void clearBSS(void *bssAddress, uint64_t bssSize)
 
 void *getStackBase()
 {
-	return (void *)((uint64_t)&endOfKernel + STACK_SIZE // The size of the stack itself, 32KiB
-									- sizeof(uint64_t)									// Begin at the top of the stack
-	);
+	return (void *)((uint64_t)&endOfKernel + STACK_SIZE - sizeof(uint64_t));
 }
 
 void *initializeKernelBinary()
@@ -62,7 +55,6 @@ void *initializeKernelBinary()
 	return getStackBase();
 }
 
-// Conditional global allocation based on selected memory manager
 #ifdef FIRSTFIT
 KHEAPLCAB kernel_heap;
 #endif
@@ -81,30 +73,22 @@ int main()
 	load_idt();
 	initializeMemoryManagers();
 
-	// Initialize scheduler
 	scheduler_init();
 
-	// Initialize semaphore manager
 	semaphore_manager_init();
 
-	// Initialize keyboard driver (must be after semaphore manager)
 	init_keyboard();
 
-	// Initialize pipe manager
 	pipe_manager_init();
 
-	// Create IDLE process (PID 0)
 	int16_t default_fds[3] = {STDIN, STDOUT, STDERR};
 	create_process(idle_process, NULL, "idle", 0, default_fds, 1);
 
-	// Create shell as process (PID 1)
 	EntryPoint entryPoint = (EntryPoint)SHELL_CODE_START;
 	create_process((MainFunction)entryPoint, NULL, "shell", 2, default_fds, 0);
 
-	// Enable interrupts and start scheduling
 	_sti();
-	yield(); // Start first context switch
+	yield();
 
-	// Should never reach here
 	return 0;
 }

@@ -1,5 +1,5 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+
+
 #include <registers.h>
 #include <consoleDriver.h>
 #include <videoDriver.h>
@@ -13,9 +13,6 @@
 #define SHELL_CODE_START ((void *)0xA00000)
 extern void *getStackBase();
 
-// El puntero 'gpr_regs' apunta a la estructura de GPRs guardada por pushState.
-// El stack frame de la CPU (con RIP, CS, RFLAGS, RSP_user, SS_user)
-// está ubicado en memoria justo DESPUÉS de estos GPRs (en direcciones más altas).
 void exceptionDispatcher(int exception, const registers_t *gpr_regs)
 {
 	console_write("\n", 1, 0xFFFFFFF);
@@ -29,7 +26,7 @@ void exceptionDispatcher(int exception, const registers_t *gpr_regs)
 		console_write("Invalid opcode exception\n", 25, 0xFFFFFF);
 		break;
 	default:
-		// Podríamos imprimir el número de excepción si es desconocido
+
 		console_write("Unknown exception code\n", 23, 0xFFFFFF);
 		break;
 	}
@@ -39,16 +36,14 @@ void exceptionDispatcher(int exception, const registers_t *gpr_regs)
 
 	char c;
 	while ((c = getChar()) == 0)
-		; // Espera bloqueante por una tecla
+		;
 
 	console_clear();
 
-	// Modificar tanto RIP como RSP para reiniciar el shell limpiamente
 	registers_t *modifiable_regs = (registers_t *)gpr_regs;
-	modifiable_regs->rip = (uint64_t)SHELL_CODE_START; // Apuntar al inicio del shell
-	modifiable_regs->rsp = (uint64_t)getStackBase();	 // Stack limpio para el shell
+	modifiable_regs->rip = (uint64_t)SHELL_CODE_START;
+	modifiable_regs->rsp = (uint64_t)getStackBase();
 
-	// Limpiar algunos registros importantes para tener un estado inicial limpio
 	modifiable_regs->rax = 0;
 	modifiable_regs->rbx = 0;
 	modifiable_regs->rcx = 0;
@@ -65,7 +60,5 @@ void exceptionDispatcher(int exception, const registers_t *gpr_regs)
 	modifiable_regs->r15 = 0;
 	modifiable_regs->rbp = 0;
 
-	// Ahora retornamos y el flujo normal continúa:
-	// popState -> iretq -> ejecuta desde el nuevo RIP con nuevo RSP
 	return;
 }

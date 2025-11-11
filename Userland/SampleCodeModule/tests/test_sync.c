@@ -1,5 +1,5 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ 
+ 
 #include "stdint.h"
 #include "stddef.h"
 #include "stdio.h"
@@ -10,12 +10,12 @@
 #define SEM_ID 67
 #define TOTAL_PAIR_PROCESSES 2
 
-int64_t global; // shared memory
+int64_t global;  
 
 void slowInc(int64_t *p, int64_t inc)
 {
   int64_t aux = *p;
-  sys_yield(); // This makes the race condition highly probable
+  sys_yield();  
   aux += inc;
   *p = aux;
 }
@@ -72,13 +72,13 @@ uint64_t my_process_inc(uint64_t argc, char *argv[])
 }
 
 uint64_t test_sync(uint64_t argc, char *argv[])
-{ //{n, use_sem, 0}
+{  
   uint64_t pids[2 * TOTAL_PAIR_PROCESSES];
 
   if (argc != 2)
     return -1;
 
-  // added for compatibility with our implementation
+   
   int8_t useSem = satoi(argv[1]);
   if (useSem)
   {
@@ -129,7 +129,7 @@ uint64_t test_sync(uint64_t argc, char *argv[])
     }
   }
 
-  // Parent destroys the semaphore after all children finish
+   
   if (useSem)
   {
     sys_sem_destroy(SEM_ID);

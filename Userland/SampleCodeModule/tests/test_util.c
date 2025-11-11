@@ -1,12 +1,12 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-//-V:printf:111,576,618,719,303
+ 
+ 
+ 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
-// Random
+ 
 static uint32_t m_z = 362436069;
 static uint32_t m_w = 521288629;
 
@@ -62,7 +62,7 @@ void endless_loop() {
 
 void endless_loop_print(uint64_t wait) {
 	int64_t pid = sys_get_pid();
-	while (1) { //-V776
+	while (1) {  
 		char buf[32];
 		puts(itoa((int)pid, buf));
 		puts(" ");

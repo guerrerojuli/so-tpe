@@ -1,9 +1,4 @@
- /*
- *   interrupts.h
- *
- *  Created on: Apr 18, 2010
- *      Author: anizzomc
- */
+
 
 #ifndef INTERRUPS_H_
 #define INTERRUPS_H_
@@ -31,7 +26,6 @@ void picSlaveMask(uint8_t mask);
 
 void haltcpu(void);
 
-// Stack frame initialization for new processes
 void *_initialize_stack_frame(void *wrapper, void *code, void *stack_top, void *args);
 
-#endif /* INTERRUPS_H_ */
+#endif

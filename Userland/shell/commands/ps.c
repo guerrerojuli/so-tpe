@@ -1,6 +1,6 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-//-V:printf:111,576,618,719,303
+ 
+ 
+ 
 #include "stdio.h"
 #include "stddef.h"
 #include "commands.h"
@@ -26,7 +26,7 @@ static const char *status_to_string(ProcessStatus status)
     }
 }
 
-// Convert uint64_t to hexadecimal string
+ 
 static void uint64_to_hex(uint64_t value, char *buffer)
 {
     const char hex_chars[] = "0123456789ABCDEF";
@@ -53,22 +53,22 @@ static int ps_func(int argc, char **argv)
         return -1;
     }
 
-    // Print header
+     
     printf("PID  | PPID | NAME             | PRIORITY | STATUS   | FG | STACK_BASE         | STACK_POS\n", NULL);
     printf("-----|------|------------------|----------|----------|----|--------------------|------------------\n", NULL);
 
-    // Print each process
+     
     for (int i = 0; i < count; i++)
     {
         void *args[1];
         char hex_buffer[20];
         
-        // Print PID
+         
         int pid = (int)processes[i].pid;
         args[0] = &pid;
         printf("%d", args);
         
-        // Add spacing (adjust based on PID size)
+         
         if (pid < 10) printf("    ", NULL);
         else if (pid < 100) printf("   ", NULL);
         else if (pid < 1000) printf("  ", NULL);
@@ -76,12 +76,12 @@ static int ps_func(int argc, char **argv)
         
         printf("| ", NULL);
 
-        // Print PPID
+         
         int ppid = (int)processes[i].parent_pid;
         args[0] = &ppid;
         printf("%d", args);
         
-        // Add spacing
+         
         if (ppid < 10) printf("    ", NULL);
         else if (ppid < 100) printf("   ", NULL);
         else if (ppid < 1000) printf("  ", NULL);
@@ -89,11 +89,11 @@ static int ps_func(int argc, char **argv)
         
         printf("| ", NULL);
 
-        // Print Name (18 chars width, left-aligned)
+         
         args[0] = processes[i].name;
         printf("%s", args);
         
-        // Add padding for name alignment
+         
         int name_len = strlen(processes[i].name);
         int padding = 17 - name_len;
         if (padding < 1)
@@ -103,7 +103,7 @@ static int ps_func(int argc, char **argv)
         
         printf("| ", NULL);
 
-        // Print Priority
+         
         int priority = (int)processes[i].priority;
         args[0] = &priority;
         printf("%d", args);
@@ -111,12 +111,12 @@ static int ps_func(int argc, char **argv)
         
         printf("| ", NULL);
 
-        // Print Status (9 chars width)
+         
         const char *status_str = status_to_string(processes[i].status);
         args[0] = (void *)status_str;
         printf("%s", args);
         
-        // Add padding for status
+         
         int status_len = strlen(status_str);
         padding = 9 - status_len;
         if (padding < 1)
@@ -126,14 +126,14 @@ static int ps_func(int argc, char **argv)
         
         printf("| ", NULL);
 
-        // Print Foreground
+         
         args[0] = processes[i].is_foreground ? (void *)"Y" : (void *)"N";
         printf("%s", args);
         printf("  ", NULL);
         
         printf("| ", NULL);
 
-        // Print Stack Base
+         
         uint64_to_hex((uint64_t)processes[i].stack_base, hex_buffer);
         args[0] = hex_buffer;
         printf("%s", args);
@@ -141,7 +141,7 @@ static int ps_func(int argc, char **argv)
         
         printf("| ", NULL);
 
-        // Print Stack Pos
+         
         uint64_to_hex((uint64_t)processes[i].stack_pos, hex_buffer);
         args[0] = hex_buffer;
         printf("%s", args);

@@ -1,5 +1,5 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ 
+ 
 #include "stdio.h"
 #include "stdlib.h"
 #include "ctype.h"
@@ -10,12 +10,10 @@
 int scanf(const char *format, void** args){
     int i = 0, j = 0;
     char scan_buff[SCANF_BUFF_MAX_SIZE];
-    /* Read user input one character at a time until we encounter a newline
-       or fill the buffer – this avoids blocking until 1 024 characters are
-       typed. */
+     
     uint32_t len = 0;
     while (len < SCANF_BUFF_MAX_SIZE - 1) {
-        char c = getchar();  /* blocks until one key is pressed */
+        char c = getchar();   
         if (c == '\n' || c == '\r') {
             putchar(c);
             break;
@@ -36,7 +34,7 @@ int scanf(const char *format, void** args){
         if(format[i] == '%'){
             i++;
             switch(format[i]){
-                case 'd':             // int
+                case 'd':              
                     int *num = (int*)*args;
                     *num = atoi(scan_buff+j);
                     while(isDigit(scan_buff[j])){
@@ -44,7 +42,7 @@ int scanf(const char *format, void** args){
                     }
                     args++;
                     break;
-                case 's':             // string
+                case 's':              
                     char *str = (char*)*args;
                     while(scan_buff[j] != 0 && !isSpace(scan_buff[j])){
                         *str = scan_buff[j];
@@ -55,7 +53,7 @@ int scanf(const char *format, void** args){
                 args++;
                 j++; 
                     break;
-                case 'c':             // char
+                case 'c':              
                     char *c = (char*)*args;
                     *c = scan_buff[j];
                     args++;
@@ -114,7 +112,7 @@ int printf(const char *format, void **args){
             int len = i - start;
             sys_write((uint64_t)STDOUT, &format[start], len);
             toReturn += len;
-            i--; // compensate for for-loop increment
+            i--;  
         }
     }
     return toReturn;
@@ -142,7 +140,7 @@ char *fgets(char *s, int size, int stream) {
         return NULL;
     }
     
-    // For now, only support stdin (stream 0)
+     
     if (stream != STDIN) {
         return NULL;
     }
@@ -150,14 +148,14 @@ char *fgets(char *s, int size, int stream) {
     int i = 0;
     char c;
     
-    // Read characters until newline, EOF, or buffer full
+     
     while (i < size - 1) {
         if (sys_read((uint64_t)STDIN, &c, 1) <= 0) {
-            // EOF or error
+             
             if (i == 0) {
-                return NULL;  // No characters read
+                return NULL;   
             }
-            break;  // Some characters were read
+            break;   
         }
         
         if (c == '\n' || c == '\r') {
@@ -175,7 +173,7 @@ char *fgets(char *s, int size, int stream) {
         }        
     }
     
-    // Null-terminate the string
+     
     s[i] = '\0';
     
     return s;

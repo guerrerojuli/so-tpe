@@ -40,30 +40,30 @@ section .text
     ret
 %endmacro
 
-; Syscall numbers must match Kernel/include/syscalls.h
-; SYSCALL_READ = 0
-; SYSCALL_WRITE = 1
-; SYSCALL_CREATE_PROCESS = 2
-; SYSCALL_KILL_PROCESS = 3
-; SYSCALL_GET_PID = 4
-; SYSCALL_YIELD = 5
-; SYSCALL_SET_PRIORITY = 6
-; SYSCALL_CLEAR_TEXT_BUFFER = 7
-; SYSCALL_BLOCK = 8
-; SYSCALL_SEM_INIT = 12
-; SYSCALL_SEM_OPEN = 13
-; SYSCALL_SEM_CLOSE = 14
-; SYSCALL_SEM_DESTROY = 15
-; SYSCALL_SEM_WAIT = 16
-; SYSCALL_SEM_POST = 17
-; SYSCALL_WAITPID = 18
-; SYSCALL_PIPE_OPEN = 19
-; SYSCALL_PIPE_CLOSE = 20
-; SYSCALL_PIPE_GET = 21
-; SYSCALL_GET_PROCESS_INFO = 22
-; SYSCALL_SLEEP = 23
-; SYSCALL_UNBLOCK = 24
-; SYSCALL_GET_TICKS = 25
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 sys_read:
     syscall 0
@@ -143,6 +143,6 @@ sys_sleep:
 sys_get_ticks:
     syscall 25
 
-; Mark stack as non-executable for security (NX bit / DEP)
+
 section .note.GNU-stack noalloc noexec nowrite progbits
 

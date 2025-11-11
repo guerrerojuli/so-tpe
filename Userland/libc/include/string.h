@@ -13,4 +13,4 @@ char *strtok(char *str, const char *delims);
 
 char *strchr(const char *s, int c);
 
-#endif /* _STRING_H */
+#endif

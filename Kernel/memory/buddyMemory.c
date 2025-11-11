@@ -1,10 +1,7 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+
+
 #ifdef BUDDY
 
-/*
- * Buddy memory manager - power-of-2 page allocator with automatic splitting/coalescing
- */
 #include <stdint.h>
 #include <stddef.h>
 #include "../include/lib.h"
@@ -21,7 +18,6 @@ static zone_t buddy_zone;
 #define MarkPageFree(page) ((page)->flags |= PAGE_FREE_FLAG)
 #define MarkPageUsed(page) ((page)->flags &= ~PAGE_FREE_FLAG)
 
-// Funciones auxiliares de listas
 static inline void list_init(list_node_t *list)
 {
   list->next = list;
@@ -54,7 +50,6 @@ static inline page_t *list_first_entry(list_node_t *head)
   return (page_t *)((uintptr_t)head->next - offsetof(page_t, free_list_node));
 }
 
-// Conversiones FrameNumber <-> PAGE
 static inline page_t *frame_to_page(zone_t *zone, uint64_t frame_number)
 {
   uint64_t base_frame = zone->heap_base / PAGE_SIZE;
@@ -66,7 +61,6 @@ static inline uint64_t page_to_frame_number(page_t *page)
   return page->frame_number;
 }
 
-// Encuentra el buddy: bloque adyacente con el que se puede fusionar
 static inline uint64_t get_buddy_frame_number(uint64_t frame_number, int order)
 {
   return frame_number ^ (1UL << order);
@@ -79,7 +73,6 @@ static void add_to_free_list(zone_t *zone, page_t *page, int order)
   list_add(&page[0].free_list_node, &area->free_list_head);
   area->free_block_count++;
 
-  // Set order and BUDDY flag for ALL pages in the block
   uint64_t nr_pages = 1UL << order;
   for (uint64_t i = 0; i < nr_pages; i++)
   {
@@ -95,7 +88,6 @@ static void del_from_free_list(zone_t *zone, page_t *page, int order)
   list_del(&page->free_list_node);
   area->free_block_count--;
 
-  // Clear BUDDY flag for ALL pages in the block
   uint64_t nr_pages = 1UL << order;
   for (uint64_t i = 0; i < nr_pages; i++)
   {
@@ -103,7 +95,6 @@ static void del_from_free_list(zone_t *zone, page_t *page, int order)
   }
 }
 
-// Libera páginas e intenta fusionar con buddies libres
 void buddy_free_pages(page_t *page, int order)
 {
   zone_t *zone = &buddy_zone;
@@ -112,7 +103,6 @@ void buddy_free_pages(page_t *page, int order)
   page_t *buddy;
   uint64_t base_frame = zone->heap_base / PAGE_SIZE;
 
-  // Fusionar con buddies mientras sea posible
   while (order < MAX_ORDER)
   {
     buddy_frame_number = get_buddy_frame_number(frame_number, order);
@@ -123,13 +113,11 @@ void buddy_free_pages(page_t *page, int order)
 
     buddy = frame_to_page(zone, buddy_frame_number);
 
-    // Buddy debe estar libre y del mismo orden
     if (!PageIsFree(buddy) || buddy->order != order)
       break;
 
     del_from_free_list(zone, buddy, order);
 
-    // El bloque fusionado empieza en el frame menor
     if (buddy_frame_number < frame_number)
     {
       page = buddy;
@@ -142,20 +130,16 @@ void buddy_free_pages(page_t *page, int order)
   add_to_free_list(zone, page, order);
 }
 
-// Asigna páginas, divide bloques grandes si es necesario
 page_t *buddy_alloc_pages(int order)
 {
   zone_t *zone = &buddy_zone;
-  // unsigned long flags;
+
   page_t *page = NULL;
   int current_order;
 
   if (order > MAX_ORDER)
     return NULL;
 
-  // spin_lock_irqsave(&zone->lock, flags);
-
-  // Buscar bloque del tamaño adecuado
   for (current_order = order; current_order <= MAX_ORDER; current_order++)
   {
     free_area_t *area = &zone->free_lists[current_order];
@@ -166,7 +150,6 @@ page_t *buddy_alloc_pages(int order)
     page = list_first_entry(&area->free_list_head);
     del_from_free_list(zone, page, current_order);
 
-    // Dividir si es muy grande
     while (current_order > order)
     {
       current_order--;
@@ -175,17 +158,14 @@ page_t *buddy_alloc_pages(int order)
       add_to_free_list(zone, buddy, current_order);
     }
 
-    // Set final allocation order
     page->order = order;
 
     break;
   }
 
-  // spin_unlock_irqrestore(&zone->lock, flags);
   return page;
 }
 
-// Agrega memoria al sistema dividiéndola en bloques alineados
 void buddy_add_memory(uint64_t nr_pages)
 {
   zone_t *zone = &buddy_zone;
@@ -196,7 +176,6 @@ void buddy_add_memory(uint64_t nr_pages)
   {
     int order = MAX_ORDER;
 
-    // Encontrar el bloque más grande que quepa
     while (order > 0)
     {
       uint64_t block_size = 1UL << order;
@@ -213,21 +192,18 @@ void buddy_add_memory(uint64_t nr_pages)
   }
 }
 
-// Unified memory manager interface implementation
 void *mm_alloc(uint32_t size)
 {
-  // Validate size
+
   if (size == 0)
     return NULL;
 
-  // Calculate pages needed (minimum 1 page = 4KB)
   int order = 0;
   uint32_t pages_needed = (size + (PAGE_SIZE - 1)) / PAGE_SIZE;
 
   while ((1UL << order) < pages_needed && order <= MAX_ORDER)
     order++;
 
-  // Check if order exceeds MAX_ORDER
   if (order > MAX_ORDER)
     return NULL;
 
@@ -235,7 +211,6 @@ void *mm_alloc(uint32_t size)
   if (!page)
     return NULL;
 
-  // Return actual heap address, not frame_number * PAGE_SIZE
   uint64_t base_frame = buddy_zone.heap_base / PAGE_SIZE;
   uint64_t page_offset = page->frame_number - base_frame;
   return (void *)(buddy_zone.heap_base + (page_offset * PAGE_SIZE));
@@ -246,22 +221,18 @@ void mm_free(void *ptr)
   if (!ptr)
     return;
 
-  // Check if pointer is within heap range
   if ((uint64_t)ptr < buddy_zone.heap_base ||
       (uint64_t)ptr >= buddy_zone.heap_base + (buddy_zone.total_pages * PAGE_SIZE))
     return;
 
-  // Convert address to offset from heap base, then to page index
   uint64_t offset = (uint64_t)ptr - buddy_zone.heap_base;
   uint64_t page_index = offset / PAGE_SIZE;
 
-  // Bounds check
   if (page_index >= buddy_zone.total_pages)
     return;
 
   page_t *page = &buddy_zone.pages[page_index];
 
-  // Verify the page is not already free (double-free protection)
   if (PageIsFree(page))
     return;
 
@@ -316,4 +287,4 @@ const char *mm_get_name(void)
   return "Buddy System";
 }
 
-#endif // BUDDY
+#endif

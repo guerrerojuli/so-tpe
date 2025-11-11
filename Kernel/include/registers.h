@@ -5,7 +5,7 @@
 
 typedef struct
 {
-  // Registros de propósito general (pusheados por pushState)
+
   uint64_t rax;
   uint64_t rbx;
   uint64_t rcx;
@@ -22,12 +22,11 @@ typedef struct
   uint64_t r14;
   uint64_t r15;
 
-  // Registros pusheados automáticamente por el hardware durante la interrupción
-  uint64_t rip;    // Instruction Pointer
-  uint64_t cs;     // Code Segment
-  uint64_t rflags; // Flags Register
-  uint64_t rsp;    // Stack Pointer (valor original antes de la interrupción)
-  uint64_t ss;     // Stack Segment
+  uint64_t rip;
+  uint64_t cs;
+  uint64_t rflags;
+  uint64_t rsp;
+  uint64_t ss;
 } registers_t;
 
 #endif

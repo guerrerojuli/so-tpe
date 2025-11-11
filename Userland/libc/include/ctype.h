@@ -9,4 +9,4 @@ int isUpper(char c);
 int isAlnum(char c);
 char tolower(char c);
 
-#endif /* _CTYPE_H */
+#endif

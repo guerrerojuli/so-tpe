@@ -13,7 +13,6 @@ uint8_t inb(uint16_t port);
 void outb(uint16_t port, uint8_t value);
 int _xchg(int *ptr, int value);
 
-// Stack canary support
 extern uintptr_t __stack_chk_guard;
 void __attribute__((noreturn)) __stack_chk_fail(void);
 

@@ -1,5 +1,5 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
+ 
+ 
 #include "stdlib.h"
 #include "ctype.h"
 #include "unistd.h"
@@ -10,7 +10,7 @@ void exit(int status)
 {
     uint64_t pid = sys_get_pid();
     sys_kill_process(pid, (uint64_t)status);
-    // Should never reach here
+     
     while (1)
         ;
 }
@@ -55,7 +55,7 @@ char *itoa(int num, char *dest)
 
     dest[i] = 0;
 
-    // reverse the string in-place
+     
     int start = 0;
     int end = i - 1;
     while (start < end)

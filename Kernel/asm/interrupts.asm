@@ -6,7 +6,7 @@ GLOBAL haltcpu
 GLOBAL _hlt
 GLOBAL _initialize_stack_frame
 
-; Excepcion div zero y invalid opcode
+
 GLOBAL _exception0Handler, _exception6Handler
 
 GLOBAL _irq00Handler
@@ -81,11 +81,11 @@ SECTION .text
 %macro irqHandlerMaster 1
 	pushState
 
-	mov rdi, %1 ; pasaje de parametro (número de IRQ)
-	mov rsi, rsp ; pasaje del puntero a los registros
+	mov rdi, %1
+	mov rsi, rsp
 	call irqDispatcher
 
-	; signal pic EOI (End of Interrupt)
+
 	mov al, 20h
 	out 20h, al
 
@@ -95,7 +95,7 @@ SECTION .text
 
 %macro intHandlerMaster 0
 	pushState
-	mov rdi, rsp    ; Pasa puntero a toda la estructura
+	mov rdi, rsp
 	sti
 	call intDispatcher
 
@@ -106,8 +106,8 @@ SECTION .text
 %macro exceptionHandler 1
 	pushState
 
-	mov rdi, %1 ; pasaje de parametro
-	mov rsi, rsp ; paso todos los registros
+	mov rdi, %1
+	mov rsi, rsp
 	call exceptionDispatcher
 
 	popState
@@ -140,13 +140,13 @@ picMasterMask:
 picSlaveMask:
 	push    rbp
     mov     rbp, rsp
-    mov     ax, di  ; ax = mascara de 16 bits
+    mov     ax, di
     out	0A1h,al
     pop     rbp
     retn
 
 
-;8254 Timer (Timer Tick) - with context switch
+
 _irq00Handler:
 	pushState
 
@@ -154,42 +154,42 @@ _irq00Handler:
 	mov rsi, rsp
 	call irqDispatcher
 
-	; Context switch
-	mov rdi, rsp       ; Pass current RSP to scheduler
-	call schedule      ; Returns new RSP in RAX
-	mov rsp, rax       ; Switch to new process stack
 
-	; Signal PIC EOI
+	mov rdi, rsp
+	call schedule
+	mov rsp, rax
+
+
 	mov al, 20h
 	out 20h, al
 
 	popState
 	iretq
 
-;Keyboard
+
 _irq01Handler:
 	irqHandlerMaster 1
 
 _int80Handler:
 	intHandlerMaster
 
-; Yield handler - same as timer but without incrementing ticks
+
 _yieldHandler:
 	pushState
 
-	; Context switch only (no timer tick)
-	mov rdi, rsp       ; Pass current RSP to scheduler
-	call schedule      ; Returns new RSP in RAX
-	mov rsp, rax       ; Switch to new process stack
+
+	mov rdi, rsp
+	call schedule
+	mov rsp, rax
 
 	popState
 	iretq
 
-;Zero Division Exception
+
 _exception0Handler:
 	exceptionHandler 0
 
-;Invalid Op Code Exception
+
 _exception6Handler:
 	exceptionHandler 6
 
@@ -198,35 +198,35 @@ haltcpu:
 	hlt
 	ret
 
-; Initialize stack frame for new process
-; Args: RDI = wrapper, RSI = entry point, RDX = stack top, RCX = args
-; Returns: RAX = new stack pointer
-_initialize_stack_frame:
-	mov r8, rsp         ; Save current RSP
-	mov r9, rbp         ; Save current RBP
 
-	mov rsp, rdx        ; Switch to process stack
+
+
+_initialize_stack_frame:
+	mov r8, rsp
+	mov r9, rbp
+
+	mov rsp, rdx
 	mov rbp, rdx
 
-	; Setup iretq frame
-	push 0x0            ; SS
-	push rdx            ; RSP
-	push 0x202          ; RFLAGS (IF=1)
-	push 0x8            ; CS
-	push rdi            ; RIP (wrapper function)
 
-	; Setup register state
-	mov rdi, rsi        ; First arg to wrapper (entry point)
-	mov rsi, rcx        ; Second arg to wrapper (args)
-	pushState           ; Push all 15 registers
+	push 0x0
+	push rdx
+	push 0x202
+	push 0x8
+	push rdi
 
-	mov rax, rsp        ; Return new stack position
-	mov rsp, r8         ; Restore original RSP
-	mov rbp, r9         ; Restore original RBP
+
+	mov rdi, rsi
+	mov rsi, rcx
+	pushState
+
+	mov rax, rsp
+	mov rsp, r8
+	mov rbp, r9
 	ret
 
 SECTION .bss
 	aux resq 1
 
-; Mark stack as non-executable for security (NX bit / DEP)
+
 section .note.GNU-stack noalloc noexec nowrite progbits

@@ -8,7 +8,8 @@
 #define PIPE_MANAGER_ADDRESS 0x80000
 #define EOF_MARKER -1
 
-typedef struct Pipe {
+typedef struct Pipe
+{
     char buffer[PIPE_SIZE];
     uint16_t startPosition;
     uint16_t currentSize;
@@ -17,13 +18,13 @@ typedef struct Pipe {
     uint8_t isBlocking;
 } Pipe;
 
-typedef struct PipeManager {
+typedef struct PipeManager
+{
     Pipe *pipes[MAX_PIPES];
     uint16_t lastFreePipe;
     uint16_t qtyPipes;
 } PipeManager;
 
-// Pipe manager functions
 void pipe_manager_init();
 int16_t pipe_get();
 int8_t pipe_open_for_pid(uint16_t pid, uint16_t id, uint8_t mode);
