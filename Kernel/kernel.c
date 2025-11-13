@@ -57,10 +57,6 @@ void *initializeKernelBinary()
 	return getStackBase();
 }
 
-#ifdef FIRSTFIT
-KHEAPLCAB kernel_heap;
-#endif
-
 void initializeMemoryManagers()
 {
 	uintptr_t heapStart = (uintptr_t)getStackBase();

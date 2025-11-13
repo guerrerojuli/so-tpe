@@ -225,7 +225,7 @@ void execute_single_command(Command *cmd, int is_background) {
              
             cmd_ptr->func(arg_count, current_args);
         } else {
-            if (waitpid((uint16_t)pid) < 0) {
+            if (waitpid((uint16_t)pid) < 0 && waitpid((uint16_t)pid) != -1) { // -1 devuelve si mato con ctrl+c, no quiero impprimir
                 printf("Warning: failed to wait for foreground process\n", NULL);
             }
         }

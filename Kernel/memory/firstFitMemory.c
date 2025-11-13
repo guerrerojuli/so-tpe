@@ -8,257 +8,168 @@
 #include "../include/lib.h"
 #include <stddef.h>
 
-#define KHEAPFLAG_USED 0x80000000
+// Memory block structure for the free list
+typedef union MemBlock MemBlock;
 
-typedef struct _KHEAPHDRLCAB
-{
-    uint32_t prevsize;
-    uint32_t flagsize;
-} KHEAPHDRLCAB;
+union MemBlock {
+    struct {
+        MemBlock *next;      // Next block in free list
+        uint32_t blockSize;  // Size in units
+    } metadata;
+    uint64_t align;  // Force alignment
+};
 
-typedef struct _KHEAPBLOCKLCAB
-{
-    uint32_t size;
-    uint32_t used;
-    struct _KHEAPBLOCKLCAB *next;
-} KHEAPBLOCKLCAB;
+// Static variables for memory management
+static MemBlock sentinel;        // Sentinel node for circular list
+static MemBlock *freeList = NULL; // Current position in free list
+static uint32_t totalMemory = 0;  // Total memory in bytes
+static uint32_t freeMemory = 0;   // Free memory in bytes
 
-typedef struct _KHEAPLCAB
-{
-    KHEAPBLOCKLCAB *fblock;
-    uint32_t bcnt;
-} KHEAPLCAB;
+#define BLOCK_SIZE sizeof(MemBlock)
+#define MIN_BLOCK_UNITS 2  // Minimum allocation size
 
-static KHEAPLCAB kernel_heap;
-
-void k_heapLCABInit(KHEAPLCAB *heap)
-{
-    heap->fblock = 0;
-    heap->bcnt = 0;
+// Convert bytes to block units (round up)
+static inline uint32_t bytesToUnits(uint32_t bytes) {
+    return (bytes + BLOCK_SIZE - 1) / BLOCK_SIZE;
 }
 
-int k_heapLCABAddBlock(KHEAPLCAB *heap, uintptr_t addr, uint32_t size)
-{
-    KHEAPBLOCKLCAB *hb = (KHEAPBLOCKLCAB *)addr;
-    KHEAPHDRLCAB *hdr;
-
-    hb->size = size;
-    hb->used = sizeof(KHEAPBLOCKLCAB) + sizeof(KHEAPHDRLCAB);
-
-    hb->next = heap->fblock;
-    heap->fblock = hb;
-
-    hdr = (KHEAPHDRLCAB *)&hb[1];
-
-    hdr->flagsize = hb->size - (sizeof(KHEAPBLOCKLCAB) + 32);
-
-    hdr->prevsize = 0;
-
-    ++heap->bcnt;
-
-    return 1;
+// Convert units to bytes
+static inline uint32_t unitsToBytes(uint32_t units) {
+    return units * BLOCK_SIZE;
 }
 
-void *k_heapLCABAlloc(KHEAPLCAB *heap, uint32_t size)
-{
-    KHEAPBLOCKLCAB *hb;
-    KHEAPHDRLCAB *hdr, *_hdr;
-    uint32_t sz;
-    uint8_t fg;
-    uint32_t checks = 0;
-    uint32_t bc = 0;
-
-    for (hb = heap->fblock; hb; hb = hb->next)
-    {
-
-        if ((hb->size - hb->used) >= (size + sizeof(KHEAPHDRLCAB)))
-        {
-            ++bc;
-
-            hdr = (KHEAPHDRLCAB *)&hb[1];
-
-            while ((uintptr_t)hdr < ((uintptr_t)hb + hb->size))
-            {
-                ++checks;
-
-                fg = hdr->flagsize >> 31;
-
-                sz = hdr->flagsize & 0x7fffffff;
-
-                if (!fg)
-                {
-                    if (sz >= size)
-                    {
-
-                        if (sz > (size + sizeof(KHEAPHDRLCAB) + 16))
-                        {
-
-                            _hdr = (KHEAPHDRLCAB *)((uintptr_t)&hdr[1] + size);
-
-                            _hdr->flagsize = sz - (size + sizeof(KHEAPHDRLCAB));
-                            _hdr->prevsize = size;
-
-                            hdr->flagsize = KHEAPFLAG_USED | size;
-
-                            hb->used += sizeof(KHEAPHDRLCAB);
-                        }
-                        else
-                        {
-
-                            hdr->flagsize |= KHEAPFLAG_USED;
-                        }
-
-                        hb->used += size;
-
-                        return &hdr[1];
-                    }
-                }
-
-                hdr = (KHEAPHDRLCAB *)((uintptr_t)&hdr[1] + sz);
-            }
-        }
+void mm_init(uintptr_t start, uint32_t size) {
+    // Calculate how many units we can fit
+    uint32_t totalUnits = size / BLOCK_SIZE;
+    if (totalUnits < MIN_BLOCK_UNITS) {
+        return; // Not enough memory
     }
 
-    return 0;
+    // Initialize the first free block
+    MemBlock *initialBlock = (MemBlock *)start;
+    initialBlock->metadata.blockSize = totalUnits;
+
+    // Set up total and free memory
+    totalMemory = unitsToBytes(totalUnits);
+    freeMemory = totalMemory;
+
+    // Initialize sentinel node
+    sentinel.metadata.next = initialBlock;
+    sentinel.metadata.blockSize = 0;
+
+    // Make it circular
+    initialBlock->metadata.next = &sentinel;
+
+    // Set current free list pointer
+    freeList = &sentinel;
 }
 
-void k_heapLCABFree(KHEAPLCAB *heap, void *ptr)
-{
-    KHEAPHDRLCAB *hdr, *phdr, *nhdr;
-    KHEAPBLOCKLCAB *hb;
-    uint32_t sz;
+void *mm_alloc(uint32_t size) {
+    if (size == 0) {
+        return NULL;
+    }
 
-    for (hb = heap->fblock; hb; hb = hb->next)
-    {
-        if (((uintptr_t)ptr > (uintptr_t)hb) &&
-            ((uintptr_t)ptr < (uintptr_t)hb + hb->size))
-        {
+    // Calculate units needed (including header)
+    uint32_t unitsNeeded = bytesToUnits(size) + 1; // +1 for header
+    if (unitsNeeded < MIN_BLOCK_UNITS) {
+        unitsNeeded = MIN_BLOCK_UNITS;
+    }
 
-            hdr = (KHEAPHDRLCAB *)((uintptr_t)ptr - sizeof(KHEAPHDRLCAB));
+    // Search for a suitable block using first-fit
+    MemBlock *current, *previous;
+    previous = freeList;
 
-            hdr->flagsize &= ~KHEAPFLAG_USED;
+    // Traverse the circular list
+    for (current = previous->metadata.next;;
+         previous = current, current = current->metadata.next) {
 
-            uint32_t size_to_free = (hdr->flagsize & 0x7fffffff);
-            if (hb->used >= size_to_free)
-            {
-                hb->used -= size_to_free;
-            }
-            else
-            {
-                hb->used = 0;
-            }
+        // Found a block that's large enough
+        if (current->metadata.blockSize >= unitsNeeded) {
+            MemBlock *allocatedBlock;
 
-            if (hdr->prevsize)
-            {
-
-                phdr = (KHEAPHDRLCAB *)((uintptr_t)hdr -
-                                        (sizeof(KHEAPHDRLCAB) + hdr->prevsize));
-            }
-            else
-            {
-                phdr = 0;
+            if (current->metadata.blockSize == unitsNeeded) {
+                // Exact fit - remove entire block from free list
+                previous->metadata.next = current->metadata.next;
+                allocatedBlock = current;
+            } else {
+                // Split the block
+                current->metadata.blockSize -= unitsNeeded;
+                allocatedBlock = current + current->metadata.blockSize;
+                allocatedBlock->metadata.blockSize = unitsNeeded;
             }
 
-            sz = hdr->flagsize & 0x7fffffff;
-            nhdr = (KHEAPHDRLCAB *)((uintptr_t)&hdr[1] + sz);
+            // Update free list pointer for next search
+            freeList = previous;
 
-            if ((uintptr_t)nhdr >= ((uintptr_t)hb + hb->size))
-            {
-                nhdr = 0;
-            }
+            // Update free memory counter
+            freeMemory -= unitsToBytes(unitsNeeded);
 
-            if (nhdr)
-            {
-                if (!(nhdr->flagsize & KHEAPFLAG_USED))
-                {
+            // Return pointer to usable memory (skip header)
+            return (void *)(allocatedBlock + 1);
+        }
 
-                    hdr->flagsize += sizeof(KHEAPHDRLCAB) +
-                                     (nhdr->flagsize & 0x7fffffff);
-
-                    if (hb->used >= sizeof(KHEAPHDRLCAB))
-                    {
-                        hb->used -= sizeof(KHEAPHDRLCAB);
-                    }
-                    else
-                    {
-                        hb->used = 0;
-                    }
-
-                    nhdr = (KHEAPHDRLCAB *)((uintptr_t)&hdr[1] +
-                                            (hdr->flagsize & 0x7fffffff));
-                    if ((uintptr_t)nhdr < ((uintptr_t)hb + hb->size))
-                    {
-                        nhdr->prevsize = hdr->flagsize & 0x7fffffff;
-                    }
-                }
-            }
-
-            if (phdr)
-            {
-
-                if (!(phdr->flagsize & KHEAPFLAG_USED))
-                {
-
-                    phdr->flagsize += sizeof(KHEAPHDRLCAB) +
-                                      (hdr->flagsize & 0x7fffffff);
-
-                    if (hb->used >= sizeof(KHEAPHDRLCAB))
-                    {
-                        hb->used -= sizeof(KHEAPHDRLCAB);
-                    }
-                    else
-                    {
-                        hb->used = 0;
-                    }
-
-                    hdr = phdr;
-
-                    nhdr = (KHEAPHDRLCAB *)((uintptr_t)&hdr[1] +
-                                            (hdr->flagsize & 0x7fffffff));
-                    if ((uintptr_t)nhdr < ((uintptr_t)hb + hb->size))
-                    {
-                        nhdr->prevsize = hdr->flagsize & 0x7fffffff;
-                    }
-                }
-            }
-
-            return;
+        // We've searched the entire list
+        if (current == freeList) {
+            return NULL; // No suitable block found
         }
     }
 }
 
-void *mm_alloc(uint32_t size)
-{
-    return k_heapLCABAlloc(&kernel_heap, size);
-}
-
-void mm_free(void *ptr)
-{
-    k_heapLCABFree(&kernel_heap, ptr);
-}
-
-void mm_init(uintptr_t start, uint32_t size)
-{
-    k_heapLCABInit(&kernel_heap);
-    k_heapLCABAddBlock(&kernel_heap, start, size);
-}
-
-void mm_get_stats(uint64_t *total, uint64_t *free)
-{
-    *total = 0;
-    *free = 0;
-
-    KHEAPBLOCKLCAB *block = kernel_heap.fblock;
-    while (block != NULL)
-    {
-        *total += block->size;
-        *free += (block->size - block->used);
-        block = block->next;
+void mm_free(void *ptr) {
+    if (ptr == NULL) {
+        return;
     }
+
+    // Get block header
+    MemBlock *blockToFree = ((MemBlock *)ptr) - 1;
+
+    // Update free memory counter
+    freeMemory += unitsToBytes(blockToFree->metadata.blockSize);
+
+    // Find where to insert in the free list
+    MemBlock *current;
+    for (current = freeList;
+         !(blockToFree > current && blockToFree < current->metadata.next);
+         current = current->metadata.next) {
+
+        // Handle wrap-around case
+        if (current >= current->metadata.next &&
+            (blockToFree > current || blockToFree < current->metadata.next)) {
+            break;
+        }
+    }
+
+    // Try to coalesce with next block
+    if (blockToFree + blockToFree->metadata.blockSize == current->metadata.next) {
+        // Merge with next block
+        blockToFree->metadata.blockSize += current->metadata.next->metadata.blockSize;
+        blockToFree->metadata.next = current->metadata.next->metadata.next;
+    } else {
+        // Just link to next block
+        blockToFree->metadata.next = current->metadata.next;
+    }
+
+    // Try to coalesce with previous block
+    if (current + current->metadata.blockSize == blockToFree) {
+        // Merge with previous block
+        current->metadata.blockSize += blockToFree->metadata.blockSize;
+        current->metadata.next = blockToFree->metadata.next;
+    } else {
+        // Just link from previous block
+        current->metadata.next = blockToFree;
+        current = blockToFree;
+    }
+
+    // Update free list pointer
+    freeList = current;
 }
 
-const char *mm_get_name(void)
-{
+void mm_get_stats(uint64_t *total, uint64_t *free) {
+    *total = (uint64_t)totalMemory;
+    *free = (uint64_t)freeMemory;
+}
+
+const char *mm_get_name(void) {
     return "First-Fit";
 }
 
