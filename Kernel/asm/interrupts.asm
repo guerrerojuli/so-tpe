@@ -96,7 +96,7 @@ SECTION .text
 %macro intHandlerMaster 0
 	pushState
 	mov rdi, rsp
-	sti
+	;sti
 	call intDispatcher
 
 	popStateWithoutRax

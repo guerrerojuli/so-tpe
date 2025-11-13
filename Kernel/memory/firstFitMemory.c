@@ -195,6 +195,7 @@ void k_heapLCABFree(KHEAPLCAB *heap, void *ptr)
 
             if (phdr)
             {
+
                 if (!(phdr->flagsize & KHEAPFLAG_USED))
                 {
 

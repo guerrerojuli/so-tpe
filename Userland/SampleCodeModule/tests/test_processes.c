@@ -88,6 +88,7 @@ int64_t test_processes(uint64_t argc, char *argv[])
             }
             p_rqs[rq].state = TEST_KILLED;
             alive--;
+            sys_waitpid(p_rqs[rq].pid);
           }
           break;
 
