@@ -204,12 +204,12 @@ mvar 2 3
 ## Limitaciones Conocidas
 
 - Los pipes solo soportan el encadenamiento de 2 comandos
-- En ciertos momentos la shell se bloquea completamente y debemos reiniciar el programa. Es un bug que estuvimos teniendo los últimos 3 días previo a la entrega, lo debuggeamos con GDB dentro de QEMU (realmente mucho tiempo :/), cambiamos la implementación del scheduler y de los memory managers (ambas cosas por separado), y no pudimos mitigarlo. Nos sucede que el error no es fácil de replicar ya que sucede en casos que al replicarlos no vuelve a suceder. Un patrón que encontramos es que suele aparecer luego de correr algún test, de procesos o memoria, durante algunos minutos hasta volver a la shell con CTRL+C y ahí no podemos lanzar ningún otro comando. También suele suceder cuando hacemos 'kill pid' de muchos procesos seguidos. En líneas generales, no es un error que suceda tan frecuente pero es crítico ya que hay que reiniciar el programa completo.
+- La función de sleep (utilizada en el comando loop) hace busy waiting, utilizando _hlt() que lo hace más eficiente en términos de ejecuciones por segundo, pero sin embargo al correr un loop en background la shell comienza a funcionar más lento debido a esto. Lo óptimo sería tener una estructura separada para los procesos que están haciendo sleep, y consultarlos periódicamente si ya pasó el suficiente tiempo para levantarlos. No llegamos con el tiempo a implementar esto.
 
 ## Notas de Implementación
 
 ### Gestores de Memoria
-- **First-Fit**: Asignación de tamaño variable con coalescencia automática de bloques libres
+- **First-Fit**: Lista libre circular con nodo centinela, asigna bloques de tamaño variable en unidades alineadas y coalescea automáticamente bloques adyacentes al liberar
 - **Buddy System**: Bloques de tamaño potencia de 2, división y coalescencia automática
 
 ### Scheduler
