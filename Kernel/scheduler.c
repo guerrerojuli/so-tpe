@@ -305,7 +305,7 @@ int32_t kill_process(uint16_t pid, int32_t retval)
         if (fd >= BUILT_IN_DESCRIPTORS)
         {
 
-            pipe_close_for_pid(pid, fd);
+            pipe_close(pid, fd);
             process->file_descriptors[i] = -1;
         }
     }

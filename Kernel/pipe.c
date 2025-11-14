@@ -9,57 +9,12 @@
 #include "include/globals.h"
 #include <stddef.h>
 
-static PipeManager *pipeManager;
-
-#define bufferPosition(pipe) (((pipe)->startPosition + (pipe)->currentSize) % PIPE_SIZE)
-
 static int16_t get_pipe_index_by_id(uint16_t id);
 static Pipe *get_pipe_by_id(uint16_t id);
 static Pipe *create_pipe(void);
 static void free_pipe(Pipe *pipe);
 
-static int16_t get_pipe_index_by_id(uint16_t id)
-{
-    int16_t index = (int16_t)id - BUILT_IN_DESCRIPTORS;
-    if (index < 0 || index >= MAX_PIPES)
-    {
-        return -1;
-    }
-    return index;
-}
-
-static Pipe *get_pipe_by_id(uint16_t id)
-{
-    int16_t index = get_pipe_index_by_id(id);
-    if (index == -1)
-    {
-        return NULL;
-    }
-    return pipeManager->pipes[index];
-}
-
-static Pipe *create_pipe(void)
-{
-    Pipe *pipe = (Pipe *)mm_alloc(sizeof(Pipe));
-    if (pipe == NULL)
-    {
-        return NULL;
-    }
-
-    pipe->startPosition = 0;
-    pipe->currentSize = 0;
-    pipe->inputPid = -1;
-    pipe->outputPid = -1;
-    pipe->isBlocking = 0;
-    memset(pipe->buffer, 0, PIPE_SIZE);
-
-    return pipe;
-}
-
-static void free_pipe(Pipe *pipe)
-{
-    mm_free(pipe);
-}
+static PipeManager *pipeManager;
 
 void pipe_manager_init()
 {
@@ -100,7 +55,7 @@ int16_t pipe_get()
     return pipeId;
 }
 
-int8_t pipe_open_for_pid(uint16_t pid, uint16_t id, uint8_t mode)
+int8_t pipe_open(uint16_t pid, uint16_t id, uint8_t mode)
 {
     int16_t index = get_pipe_index_by_id(id);
     if (index == -1)
@@ -163,7 +118,7 @@ int8_t pipe_open_for_pid(uint16_t pid, uint16_t id, uint8_t mode)
     return 0;
 }
 
-int8_t pipe_close_for_pid(uint16_t pid, uint16_t id)
+int8_t pipe_close(uint16_t pid, uint16_t id)
 {
     int16_t index = get_pipe_index_by_id(id);
     if (index == -1)
@@ -316,4 +271,47 @@ int64_t pipe_write(uint16_t pid, uint16_t id, const char *buffer, uint64_t len)
     }
 
     return writtenBytes;
+}
+
+static int16_t get_pipe_index_by_id(uint16_t id)
+{
+    int16_t index = (int16_t)id - BUILT_IN_DESCRIPTORS;
+    if (index < 0 || index >= MAX_PIPES)
+    {
+        return -1;
+    }
+    return index;
+}
+
+static Pipe *get_pipe_by_id(uint16_t id)
+{
+    int16_t index = get_pipe_index_by_id(id);
+    if (index == -1)
+    {
+        return NULL;
+    }
+    return pipeManager->pipes[index];
+}
+
+static Pipe *create_pipe(void)
+{
+    Pipe *pipe = (Pipe *)mm_alloc(sizeof(Pipe));
+    if (pipe == NULL)
+    {
+        return NULL;
+    }
+
+    pipe->startPosition = 0;
+    pipe->currentSize = 0;
+    pipe->inputPid = -1;
+    pipe->outputPid = -1;
+    pipe->isBlocking = 0;
+    memset(pipe->buffer, 0, PIPE_SIZE);
+
+    return pipe;
+}
+
+static void free_pipe(Pipe *pipe)
+{
+    mm_free(pipe);
 }

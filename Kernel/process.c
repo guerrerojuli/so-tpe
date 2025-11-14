@@ -68,7 +68,7 @@ int8_t init_process(Process *process, uint16_t pid, uint16_t parent_pid,
         {
 
             uint8_t mode = (i == 0) ? READ : WRITE;
-            pipe_open_for_pid(process->pid, fds[i], mode);
+            pipe_open(process->pid, fds[i], mode);
         }
     }
 
@@ -83,7 +83,7 @@ void free_process(Process *process)
         int16_t fd = process->file_descriptors[i];
         if (fd >= BUILT_IN_DESCRIPTORS)
         {
-            pipe_close_for_pid(process->pid, fd);
+            pipe_close(process->pid, fd);
         }
     }
 
