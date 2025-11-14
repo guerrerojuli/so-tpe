@@ -11,6 +11,6 @@ shell: libc
 clean:
 	cd libc; make clean
 	cd shell; make clean
-	rm -rf *.bin
+	rm -rf *.bin *.elf
 
 .PHONY: libc shell all clean
