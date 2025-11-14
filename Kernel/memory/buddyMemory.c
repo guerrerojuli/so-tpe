@@ -19,6 +19,12 @@ static zone_t buddy_zone;
 #define MarkPageFree(page) ((page)->flags |= PAGE_FREE_FLAG)
 #define MarkPageUsed(page) ((page)->flags &= ~PAGE_FREE_FLAG)
 
+static void buddy_add_memory(uint64_t nr_pages);
+static page_t *buddy_alloc_pages(int order);
+static void buddy_free_pages(page_t *page, int order);
+static void add_to_free_list(zone_t *zone, page_t *page, int order);
+static void del_from_free_list(zone_t *zone, page_t *page, int order);
+
 static inline void list_init(list_node_t *list)
 {
   list->next = list;
@@ -67,130 +73,32 @@ static inline uint64_t get_buddy_frame_number(uint64_t frame_number, int order)
   return frame_number ^ (1UL << order);
 }
 
-static void add_to_free_list(zone_t *zone, page_t *page, int order)
+void mm_init(uintptr_t start, uint32_t size)
 {
-  free_area_t *area = &zone->free_lists[order];
+  uint64_t num_pages = size / PAGE_SIZE;
 
-  list_add(&page[0].free_list_node, &area->free_list_head);
-  area->free_block_count++;
+  if (num_pages > 2048)
+    num_pages = 2048;
 
-  uint64_t nr_pages = 1UL << order;
-  for (uint64_t i = 0; i < nr_pages; i++)
+  buddy_zone.heap_base = start;
+  buddy_zone.total_pages = num_pages;
+  buddy_zone.pages = buddy_pages;
+
+  for (int order = 0; order <= MAX_ORDER; order++)
   {
-    page[i].order = order;
-    MarkPageFree(&page[i]);
-  }
-}
-
-static void del_from_free_list(zone_t *zone, page_t *page, int order)
-{
-  free_area_t *area = &zone->free_lists[order];
-
-  list_del(&page->free_list_node);
-  area->free_block_count--;
-
-  uint64_t nr_pages = 1UL << order;
-  for (uint64_t i = 0; i < nr_pages; i++)
-  {
-    MarkPageUsed(&page[i]);
-  }
-}
-
-void buddy_free_pages(page_t *page, int order)
-{
-  zone_t *zone = &buddy_zone;
-  uint64_t frame_number = page_to_frame_number(page);
-  uint64_t buddy_frame_number;
-  page_t *buddy;
-  uint64_t base_frame = zone->heap_base / PAGE_SIZE;
-
-  while (order < MAX_ORDER)
-  {
-    buddy_frame_number = get_buddy_frame_number(frame_number, order);
-
-    if (buddy_frame_number < base_frame ||
-        buddy_frame_number >= base_frame + zone->total_pages)
-      break;
-
-    buddy = frame_to_page(zone, buddy_frame_number);
-
-    if (!PageIsFree(buddy) || buddy->order != order)
-      break;
-
-    del_from_free_list(zone, buddy, order);
-
-    if (buddy_frame_number < frame_number)
-    {
-      page = buddy;
-      frame_number = buddy_frame_number;
-    }
-
-    order++;
+    list_init(&buddy_zone.free_lists[order].free_list_head);
+    buddy_zone.free_lists[order].free_block_count = 0;
   }
 
-  add_to_free_list(zone, page, order);
-}
-
-page_t *buddy_alloc_pages(int order)
-{
-  zone_t *zone = &buddy_zone;
-
-  page_t *page = NULL;
-  int current_order;
-
-  if (order > MAX_ORDER)
-    return NULL;
-
-  for (current_order = order; current_order <= MAX_ORDER; current_order++)
+  uint64_t base_frame = buddy_zone.heap_base / PAGE_SIZE;
+  for (uint64_t i = 0; i < num_pages; i++)
   {
-    free_area_t *area = &zone->free_lists[current_order];
-
-    if (list_empty(&area->free_list_head))
-      continue;
-
-    page = list_first_entry(&area->free_list_head);
-    del_from_free_list(zone, page, current_order);
-
-    while (current_order > order)
-    {
-      current_order--;
-      page_t *buddy = frame_to_page(zone,
-                                    page_to_frame_number(page) + (1UL << current_order));
-      add_to_free_list(zone, buddy, current_order);
-    }
-
-    page->order = order;
-
-    break;
+    buddy_zone.pages[i].frame_number = base_frame + i;
+    buddy_zone.pages[i].flags = 0;
+    buddy_zone.pages[i].order = 0;
+    list_init(&buddy_zone.pages[i].free_list_node);
   }
-
-  return page;
-}
-
-void buddy_add_memory(uint64_t nr_pages)
-{
-  zone_t *zone = &buddy_zone;
-  uint64_t base_frame = zone->heap_base / PAGE_SIZE;
-  uint64_t frame_number = base_frame;
-
-  while (nr_pages > 0)
-  {
-    int order = MAX_ORDER;
-
-    while (order > 0)
-    {
-      uint64_t block_size = 1UL << order;
-      if ((frame_number & (block_size - 1)) == 0 && nr_pages >= block_size)
-        break;
-      order--;
-    }
-
-    page_t *page = frame_to_page(zone, frame_number);
-    buddy_free_pages(page, order);
-
-    frame_number += (1UL << order);
-    nr_pages -= (1UL << order);
-  }
+  buddy_add_memory(num_pages);
 }
 
 void *mm_alloc(uint32_t size)
@@ -240,34 +148,6 @@ void mm_free(void *ptr)
   buddy_free_pages(page, page->order);
 }
 
-void mm_init(uintptr_t start, uint32_t size)
-{
-  uint64_t num_pages = size / PAGE_SIZE;
-
-  if (num_pages > 2048)
-    num_pages = 2048;
-
-  buddy_zone.heap_base = start;
-  buddy_zone.total_pages = num_pages;
-  buddy_zone.pages = buddy_pages;
-
-  for (int order = 0; order <= MAX_ORDER; order++)
-  {
-    list_init(&buddy_zone.free_lists[order].free_list_head);
-    buddy_zone.free_lists[order].free_block_count = 0;
-  }
-
-  uint64_t base_frame = buddy_zone.heap_base / PAGE_SIZE;
-  for (uint64_t i = 0; i < num_pages; i++)
-  {
-    buddy_zone.pages[i].frame_number = base_frame + i;
-    buddy_zone.pages[i].flags = 0;
-    buddy_zone.pages[i].order = 0;
-    list_init(&buddy_zone.pages[i].free_list_node);
-  }
-  buddy_add_memory(num_pages);
-}
-
 void mm_get_stats(uint64_t *total, uint64_t *free)
 {
   if (total)
@@ -286,6 +166,132 @@ void mm_get_stats(uint64_t *total, uint64_t *free)
 const char *mm_get_name(void)
 {
   return "Buddy System";
+}
+
+static void add_to_free_list(zone_t *zone, page_t *page, int order)
+{
+  free_area_t *area = &zone->free_lists[order];
+
+  list_add(&page[0].free_list_node, &area->free_list_head);
+  area->free_block_count++;
+
+  uint64_t nr_pages = 1UL << order;
+  for (uint64_t i = 0; i < nr_pages; i++)
+  {
+    page[i].order = order;
+    MarkPageFree(&page[i]);
+  }
+}
+
+static void del_from_free_list(zone_t *zone, page_t *page, int order)
+{
+  free_area_t *area = &zone->free_lists[order];
+
+  list_del(&page->free_list_node);
+  area->free_block_count--;
+
+  uint64_t nr_pages = 1UL << order;
+  for (uint64_t i = 0; i < nr_pages; i++)
+  {
+    MarkPageUsed(&page[i]);
+  }
+}
+
+static void buddy_free_pages(page_t *page, int order)
+{
+  zone_t *zone = &buddy_zone;
+  uint64_t frame_number = page_to_frame_number(page);
+  uint64_t buddy_frame_number;
+  page_t *buddy;
+  uint64_t base_frame = zone->heap_base / PAGE_SIZE;
+
+  while (order < MAX_ORDER)
+  {
+    buddy_frame_number = get_buddy_frame_number(frame_number, order);
+
+    if (buddy_frame_number < base_frame ||
+        buddy_frame_number >= base_frame + zone->total_pages)
+      break;
+
+    buddy = frame_to_page(zone, buddy_frame_number);
+
+    if (!PageIsFree(buddy) || buddy->order != order)
+      break;
+
+    del_from_free_list(zone, buddy, order);
+
+    if (buddy_frame_number < frame_number)
+    {
+      page = buddy;
+      frame_number = buddy_frame_number;
+    }
+
+    order++;
+  }
+
+  add_to_free_list(zone, page, order);
+}
+
+static page_t *buddy_alloc_pages(int order)
+{
+  zone_t *zone = &buddy_zone;
+
+  page_t *page = NULL;
+  int current_order;
+
+  if (order > MAX_ORDER)
+    return NULL;
+
+  for (current_order = order; current_order <= MAX_ORDER; current_order++)
+  {
+    free_area_t *area = &zone->free_lists[current_order];
+
+    if (list_empty(&area->free_list_head))
+      continue;
+
+    page = list_first_entry(&area->free_list_head);
+    del_from_free_list(zone, page, current_order);
+
+    while (current_order > order)
+    {
+      current_order--;
+      page_t *buddy = frame_to_page(zone,
+                                    page_to_frame_number(page) + (1UL << current_order));
+      add_to_free_list(zone, buddy, current_order);
+    }
+
+    page->order = order;
+
+    break;
+  }
+
+  return page;
+}
+
+static void buddy_add_memory(uint64_t nr_pages)
+{
+  zone_t *zone = &buddy_zone;
+  uint64_t base_frame = zone->heap_base / PAGE_SIZE;
+  uint64_t frame_number = base_frame;
+
+  while (nr_pages > 0)
+  {
+    int order = MAX_ORDER;
+
+    while (order > 0)
+    {
+      uint64_t block_size = 1UL << order;
+      if ((frame_number & (block_size - 1)) == 0 && nr_pages >= block_size)
+        break;
+      order--;
+    }
+
+    page_t *page = frame_to_page(zone, frame_number);
+    buddy_free_pages(page, order);
+
+    frame_number += (1UL << order);
+    nr_pages -= (1UL << order);
+  }
 }
 
 #endif

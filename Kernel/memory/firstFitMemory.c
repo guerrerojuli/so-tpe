@@ -29,7 +29,9 @@ static uint32_t freeMemory = 0;   // Free memory in bytes
 #define BLOCK_SIZE sizeof(MemBlock)
 #define MIN_BLOCK_UNITS 2 // Minimum allocation size
 
-// Convert bytes to block units (round up)
+static inline uint32_t bytesToUnits(uint32_t bytes);
+static inline uint32_t unitsToBytes(uint32_t units);
+
 static inline uint32_t bytesToUnits(uint32_t bytes)
 {
     return (bytes + BLOCK_SIZE - 1) / BLOCK_SIZE;
