@@ -11,6 +11,5 @@
 #Object files
 *.o
 
+.DS_Store
 .vscode
-
-*.elf
