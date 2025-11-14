@@ -1,7 +1,6 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
-
 #include <lib.h>
 #include <list.h>
 #include <memoryManager.h>
@@ -11,10 +10,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define MAX_SEMAPHORES (1 << 12)
-
-typedef uint16_t sem_t;
-
 typedef struct Semaphore
 {
 	uint32_t value;
@@ -23,11 +18,12 @@ typedef struct Semaphore
 	List *mutexQueue;
 } Semaphore;
 
-static Semaphore *createSemaphore(uint32_t initialValue);
-static void freeSemaphore(Semaphore *sem);
-static void acquireMutex(Semaphore *sem);
-static void resumeFirstAvailableProcess(List *queue);
-static void releaseMutex(Semaphore *sem);
+static Semaphore *create_semaphore(uint32_t initialValue);
+static void free_semaphore(Semaphore *sem);
+static int process_is_alive(uint16_t pid);
+static void acquire_mutex(Semaphore *sem);
+static void resume_first_available_process(List *queue);
+static void release_mutex(Semaphore *sem);
 static int up(Semaphore *sem);
 static int down(Semaphore *sem);
 
@@ -44,7 +40,7 @@ void semaphore_manager_init()
 		semaphore_manager.semaphores[i] = NULL;
 }
 
-static SemaphoreManagerADT getSemaphoreManager()
+static SemaphoreManagerADT get_semaphore_manager()
 {
 	return &semaphore_manager;
 }
@@ -54,13 +50,13 @@ int8_t sem_init(sem_t *sem, uint32_t initialValue)
 	if (sem == NULL)
 		return -1;
 
-	SemaphoreManagerADT semManager = getSemaphoreManager();
+	SemaphoreManagerADT semManager = get_semaphore_manager();
 	uint16_t id = *sem;
 
 	if (id >= MAX_SEMAPHORES || semManager->semaphores[id] != NULL)
 		return -1;
 
-	semManager->semaphores[id] = createSemaphore(initialValue);
+	semManager->semaphores[id] = create_semaphore(initialValue);
 	if (semManager->semaphores[id] == NULL)
 	{
 		return -1;
@@ -73,7 +69,7 @@ int8_t sem_open(sem_t *sem)
 	if (sem == NULL)
 		return -1;
 
-	SemaphoreManagerADT semManager = getSemaphoreManager();
+	SemaphoreManagerADT semManager = get_semaphore_manager();
 	uint16_t id = *sem;
 
 	if (id >= MAX_SEMAPHORES)
@@ -87,7 +83,7 @@ int8_t sem_close(sem_t *sem)
 	if (sem == NULL)
 		return -1;
 
-	SemaphoreManagerADT semManager = getSemaphoreManager();
+	SemaphoreManagerADT semManager = get_semaphore_manager();
 	uint16_t id = *sem;
 
 	if (id >= MAX_SEMAPHORES || semManager->semaphores[id] == NULL)
@@ -101,13 +97,13 @@ int8_t sem_destroy(sem_t *sem)
 	if (sem == NULL)
 		return -1;
 
-	SemaphoreManagerADT semManager = getSemaphoreManager();
+	SemaphoreManagerADT semManager = get_semaphore_manager();
 	uint16_t id = *sem;
 
 	if (id >= MAX_SEMAPHORES || semManager->semaphores[id] == NULL)
 		return -1;
 
-	freeSemaphore(semManager->semaphores[id]);
+	free_semaphore(semManager->semaphores[id]);
 	semManager->semaphores[id] = NULL;
 	return 0;
 }
@@ -117,7 +113,7 @@ int8_t sem_post(sem_t *sem)
 	if (sem == NULL)
 		return -1;
 
-	SemaphoreManagerADT semManager = getSemaphoreManager();
+	SemaphoreManagerADT semManager = get_semaphore_manager();
 	uint16_t id = *sem;
 
 	if (id >= MAX_SEMAPHORES || semManager->semaphores[id] == NULL)
@@ -131,7 +127,7 @@ int8_t sem_wait(sem_t *sem)
 	if (sem == NULL)
 		return -1;
 
-	SemaphoreManagerADT semManager = getSemaphoreManager();
+	SemaphoreManagerADT semManager = get_semaphore_manager();
 	uint16_t id = *sem;
 
 	if (id >= MAX_SEMAPHORES || semManager->semaphores[id] == NULL)
@@ -140,7 +136,7 @@ int8_t sem_wait(sem_t *sem)
 	return down(semManager->semaphores[id]);
 }
 
-static Semaphore *createSemaphore(uint32_t initialValue)
+static Semaphore *create_semaphore(uint32_t initialValue)
 {
 	Semaphore *sem = (Semaphore *)mm_alloc(sizeof(Semaphore));
 	if (sem == NULL)
@@ -170,7 +166,7 @@ static Semaphore *createSemaphore(uint32_t initialValue)
 	return sem;
 }
 
-static void freeSemaphore(Semaphore *sem)
+static void free_semaphore(Semaphore *sem)
 {
 	if (!sem)
 		return;
@@ -202,7 +198,7 @@ static void freeSemaphore(Semaphore *sem)
 	mm_free(sem);
 }
 
-static void acquireMutex(Semaphore *sem)
+static void acquire_mutex(Semaphore *sem)
 {
 	while (_xchg(&(sem->mutex), 1))
 	{
@@ -223,7 +219,7 @@ static int process_is_alive(uint16_t pid)
 	return pid > 0;
 }
 
-static void resumeFirstAvailableProcess(List *queue)
+static void resume_first_available_process(List *queue)
 {
 	Node *current;
 	while ((current = list_get_first(queue)) != NULL)
@@ -239,30 +235,30 @@ static void resumeFirstAvailableProcess(List *queue)
 	}
 }
 
-static void releaseMutex(Semaphore *sem)
+static void release_mutex(Semaphore *sem)
 {
-	resumeFirstAvailableProcess(sem->mutexQueue);
+	resume_first_available_process(sem->mutexQueue);
 	sem->mutex = 0;
 }
 
 static int up(Semaphore *sem)
 {
-	acquireMutex(sem);
+	acquire_mutex(sem);
 	sem->value++;
 	if (sem->value == 0)
 	{
-		releaseMutex(sem);
+		release_mutex(sem);
 		return -1;
 	}
-	resumeFirstAvailableProcess(sem->semaphoreQueue);
-	releaseMutex(sem);
+	resume_first_available_process(sem->semaphoreQueue);
+	release_mutex(sem);
 
 	return 0;
 }
 
 static int down(Semaphore *sem)
 {
-	acquireMutex(sem);
+	acquire_mutex(sem);
 	while (sem->value == 0)
 	{
 		uint16_t pid = get_pid();
@@ -270,17 +266,17 @@ static int down(Semaphore *sem)
 		if (node == NULL)
 		{
 
-			releaseMutex(sem);
+			release_mutex(sem);
 			return -1;
 		}
 		set_status(pid, BLOCKED);
-		releaseMutex(sem);
+		release_mutex(sem);
 		yield();
 
-		acquireMutex(sem);
+		acquire_mutex(sem);
 	}
 	sem->value--;
-	releaseMutex(sem);
+	release_mutex(sem);
 
 	return 0;
 }
