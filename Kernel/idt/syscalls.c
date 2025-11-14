@@ -13,6 +13,7 @@
 #include <pipe.h>
 #include <time.h>
 #include <rtc.h>
+#include <interrupts.h>
 
 uint64_t sys_read(uint64_t fd, uint64_t buf, uint64_t count, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3)
 {
@@ -290,7 +291,7 @@ uint64_t sys_sleep(uint64_t seconds, uint64_t _unused1, uint64_t _unused2, uint6
 
         while (rtc_get_seconds() < target_seconds)
         {
-            yield();
+            _hlt();
         }
     }
     else
@@ -298,7 +299,7 @@ uint64_t sys_sleep(uint64_t seconds, uint64_t _unused1, uint64_t _unused2, uint6
 
         while (rtc_get_seconds() >= start_seconds || rtc_get_seconds() < target_seconds)
         {
-            yield();
+            _hlt();
         }
     }
 
