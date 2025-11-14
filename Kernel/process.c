@@ -3,6 +3,7 @@
 
 
 #include "include/process.h"
+#include "include/scheduler.h"
 #include "include/memoryManager.h"
 #include "include/lib.h"
 #include "include/pipe.h"
@@ -13,49 +14,8 @@
 extern void *_initialize_stack_frame(void *wrapper, void *code, void *stack_top, void *args);
 extern int32_t kill_current_process(int32_t retval);
 
-void process_wrapper(MainFunction code, char **args)
-{
-    int argc = 0;
-    if (args)
-    {
-        while (args[argc] != NULL)
-            argc++;
-    }
-    int retval = code(argc, args);
-    kill_current_process(retval);
-}
-
-static char **allocate_arguments(char **args)
-{
-    if (!args)
-        return NULL;
-
-    int argc = 0;
-    int total_size = 0;
-    while (args[argc] != NULL)
-    {
-        total_size += strlen(args[argc]) + 1;
-        argc++;
-    }
-
-    total_size += sizeof(char *) * (argc + 1);
-    char **new_args = (char **)mm_alloc(total_size);
-    if (new_args == NULL)
-    {
-        return NULL;
-    }
-
-    char *str_area = (char *)new_args + sizeof(char *) * (argc + 1);
-    for (int i = 0; i < argc; i++)
-    {
-        new_args[i] = str_area;
-        strcpy(str_area, args[i]);
-        str_area += strlen(args[i]) + 1;
-    }
-    new_args[argc] = NULL;
-
-    return new_args;
-}
+static void process_wrapper(MainFunction code, char **args);
+static char **allocate_arguments(char **args);
 
 int8_t init_process(Process *process, uint16_t pid, uint16_t parent_pid,
                     MainFunction code, char **args, char *name,
@@ -132,4 +92,97 @@ void free_process(Process *process)
         mm_free(process->name);
     if (process->argv)
         mm_free(process->argv);
+}
+
+int16_t get_process_fd(uint8_t fd_index)
+{
+    if (fd_index >= 3)
+        return -1;
+
+    Process *current = get_current_process();
+    if (current == NULL)
+        return -1;
+
+    return current->file_descriptors[fd_index];
+}
+
+int32_t get_process_info(ProcessInfo *info_array, uint32_t max_count)
+{
+    if (!info_array || max_count == 0)
+        return -1;
+
+    uint16_t foreground_pid = get_foreground_process_pid();
+    uint32_t count = 0;
+
+    for (int i = 0; i < MAX_PROCESSES && count < max_count; i++)
+    {
+        Process *process = get_process_by_pid(i);
+        if (process != NULL)
+        {
+            info_array[count].pid = process->pid;
+            info_array[count].parent_pid = process->parent_pid;
+
+            int j;
+            for (j = 0; j < 63 && process->name[j] != '\0'; j++)
+            {
+                info_array[count].name[j] = process->name[j];
+            }
+            info_array[count].name[j] = '\0';
+
+            info_array[count].priority = process->priority;
+            info_array[count].status = process->status;
+            info_array[count].stack_base = process->stack_base;
+            info_array[count].stack_pos = process->stack_pos;
+
+            info_array[count].is_foreground = (process->pid == foreground_pid) ? 1 : 0;
+
+            count++;
+        }
+    }
+
+    return count;
+}
+
+static void process_wrapper(MainFunction code, char **args)
+{
+    int argc = 0;
+    if (args)
+    {
+        while (args[argc] != NULL)
+            argc++;
+    }
+    int retval = code(argc, args);
+    kill_current_process(retval);
+}
+
+static char **allocate_arguments(char **args)
+{
+    if (!args)
+        return NULL;
+
+    int argc = 0;
+    int total_size = 0;
+    while (args[argc] != NULL)
+    {
+        total_size += strlen(args[argc]) + 1;
+        argc++;
+    }
+
+    total_size += sizeof(char *) * (argc + 1);
+    char **new_args = (char **)mm_alloc(total_size);
+    if (new_args == NULL)
+    {
+        return NULL;
+    }
+
+    char *str_area = (char *)new_args + sizeof(char *) * (argc + 1);
+    for (int i = 0; i < argc; i++)
+    {
+        new_args[i] = str_area;
+        strcpy(str_area, args[i]);
+        str_area += strlen(args[i]) + 1;
+    }
+    new_args[argc] = NULL;
+
+    return new_args;
 }

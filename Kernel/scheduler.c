@@ -9,22 +9,7 @@
 #include "include/globals.h"
 #include "include/consoleDriver.h"
 
-#define CALCULATE_QUANTUM(priority) (4 * (1 << priority))
-
-typedef struct
-{
-    Node *processes[MAX_PROCESSES];
-    List ready_queues[NUM_PRIORITIES];
-    List blocked_queue;
-    uint16_t current_pid;
-    uint16_t next_unused_pid;
-    uint16_t num_processes;
-    int16_t remaining_quantum;
-    int16_t initial_quantum;
-    uint8_t kill_fg_flag;
-    uint16_t foreground_pid;
-    uint8_t current_priority_level;
-} Scheduler;
+static uint16_t get_next_pid(void);
 
 static Scheduler scheduler;
 
@@ -49,27 +34,81 @@ void scheduler_init()
     scheduler.current_priority_level = NUM_PRIORITIES - 1;
 }
 
-static uint16_t get_next_pid()
+void *schedule(void *current_rsp)
 {
+    static int first_time = 1;
 
-    for (int i = 0; i < NUM_PRIORITIES; i++)
+    if (scheduler.kill_fg_flag)
     {
-        int lvl = scheduler.current_priority_level;
+        scheduler.kill_fg_flag = 0;
 
-        if (!list_is_empty(&scheduler.ready_queues[lvl]))
+        if (scheduler.current_pid != IDLE_PID &&
+            scheduler.processes[scheduler.current_pid] != NULL)
         {
-            Node *node = list_get_first(&scheduler.ready_queues[lvl]);
-            Process *process = (Process *)node->data;
+            Process *current = (Process *)scheduler.processes[scheduler.current_pid]->data;
 
-            scheduler.current_priority_level = (scheduler.current_priority_level - 1 + NUM_PRIORITIES) % NUM_PRIORITIES;
-
-            return process->pid;
+            if (current->file_descriptors[0] == STDIN)
+            {
+                kill_current_process(-1);
+            }
         }
-
-        scheduler.current_priority_level = (scheduler.current_priority_level - 1 + NUM_PRIORITIES) % NUM_PRIORITIES;
     }
 
-    return IDLE_PID;
+    scheduler.remaining_quantum--;
+
+    if (!scheduler.num_processes || scheduler.remaining_quantum > 0)
+    {
+        return current_rsp;
+    }
+
+    if (scheduler.processes[scheduler.current_pid] != NULL)
+    {
+        Process *current_process = (Process *)scheduler.processes[scheduler.current_pid]->data;
+
+        if (!first_time)
+        {
+            current_process->stack_pos = current_rsp;
+        }
+        else
+        {
+            first_time = 0;
+        }
+
+        if (current_process->status == RUNNING)
+        {
+            current_process->status = READY;
+
+            uint8_t rotated = 0;
+
+            if (scheduler.remaining_quantum == 0 && scheduler.initial_quantum > 0)
+            {
+                current_process->quantum_consumed_count++;
+
+                if (current_process->quantum_consumed_count >= AGING_THRESHOLD && current_process->priority < NUM_PRIORITIES - 1)
+                {
+                    uint8_t new_priority = current_process->priority + 1;
+                    set_priority(scheduler.current_pid, new_priority);
+                    rotated = 1;
+
+                    current_process->quantum_consumed_count = 0;
+                }
+            }
+
+            if (!rotated)
+            {
+                set_priority(scheduler.current_pid, current_process->priority);
+            }
+        }
+    }
+
+    scheduler.current_pid = get_next_pid();
+    Process *next_process = (Process *)scheduler.processes[scheduler.current_pid]->data;
+
+    scheduler.initial_quantum = CALCULATE_QUANTUM(next_process->priority);
+    scheduler.remaining_quantum = scheduler.initial_quantum;
+
+    next_process->status = RUNNING;
+    return next_process->stack_pos;
 }
 
 int16_t create_process(MainFunction code, char **args, char *name,
@@ -342,11 +381,6 @@ uint16_t get_pid()
     return scheduler.current_pid;
 }
 
-uint16_t get_foreground_pid()
-{
-    return scheduler.foreground_pid;
-}
-
 void yield()
 {
     if (scheduler.processes[scheduler.current_pid] != NULL && scheduler.initial_quantum > 0)
@@ -363,83 +397,6 @@ void yield()
 
     scheduler.remaining_quantum = 0;
     __asm__ volatile("int $0x20");
-}
-
-void *schedule(void *current_rsp)
-{
-    static int first_time = 1;
-
-    if (scheduler.kill_fg_flag)
-    {
-        scheduler.kill_fg_flag = 0;
-
-        if (scheduler.current_pid != IDLE_PID &&
-            scheduler.processes[scheduler.current_pid] != NULL)
-        {
-            Process *current = (Process *)scheduler.processes[scheduler.current_pid]->data;
-
-            if (current->file_descriptors[0] == STDIN)
-            {
-                kill_current_process(-1);
-            }
-        }
-    }
-
-    scheduler.remaining_quantum--;
-
-    if (!scheduler.num_processes || scheduler.remaining_quantum > 0)
-    {
-        return current_rsp;
-    }
-
-    if (scheduler.processes[scheduler.current_pid] != NULL)
-    {
-        Process *current_process = (Process *)scheduler.processes[scheduler.current_pid]->data;
-
-        if (!first_time)
-        {
-            current_process->stack_pos = current_rsp;
-        }
-        else
-        {
-            first_time = 0;
-        }
-
-        if (current_process->status == RUNNING)
-        {
-            current_process->status = READY;
-
-            uint8_t rotated = 0;
-
-            if (scheduler.remaining_quantum == 0 && scheduler.initial_quantum > 0)
-            {
-                current_process->quantum_consumed_count++;
-
-                if (current_process->quantum_consumed_count >= AGING_THRESHOLD && current_process->priority < NUM_PRIORITIES - 1)
-                {
-                    uint8_t new_priority = current_process->priority + 1;
-                    set_priority(scheduler.current_pid, new_priority);
-                    rotated = 1;
-
-                    current_process->quantum_consumed_count = 0;
-                }
-            }
-
-            if (!rotated)
-            {
-                set_priority(scheduler.current_pid, current_process->priority);
-            }
-        }
-    }
-
-    scheduler.current_pid = get_next_pid();
-    Process *next_process = (Process *)scheduler.processes[scheduler.current_pid]->data;
-
-    scheduler.initial_quantum = CALCULATE_QUANTUM(next_process->priority);
-    scheduler.remaining_quantum = scheduler.initial_quantum;
-
-    next_process->status = RUNNING;
-    return next_process->stack_pos;
 }
 
 int32_t waitpid(uint16_t pid)
@@ -490,50 +447,44 @@ int32_t waitpid(uint16_t pid)
     return retval;
 }
 
-int16_t get_process_fd(uint8_t fd_index)
+Process *get_current_process()
 {
-    if (fd_index >= 3)
-        return -1;
-
     if (scheduler.processes[scheduler.current_pid] == NULL)
-        return -1;
-
-    Process *current = (Process *)scheduler.processes[scheduler.current_pid]->data;
-    return current->file_descriptors[fd_index];
+        return NULL;
+    return (Process *)scheduler.processes[scheduler.current_pid]->data;
 }
 
-int32_t get_process_info(ProcessInfo *info_array, uint32_t max_count)
+Process *get_process_by_pid(uint16_t pid)
 {
-    if (!info_array || max_count == 0)
-        return -1;
+    if (pid >= MAX_PROCESSES || scheduler.processes[pid] == NULL)
+        return NULL;
+    return (Process *)scheduler.processes[pid]->data;
+}
 
-    uint32_t count = 0;
-    for (int i = 0; i < MAX_PROCESSES && count < max_count; i++)
+uint16_t get_foreground_process_pid()
+{
+    return scheduler.foreground_pid;
+}
+
+static uint16_t get_next_pid()
+{
+
+    for (int i = 0; i < NUM_PRIORITIES; i++)
     {
-        if (scheduler.processes[i] != NULL)
+        int lvl = scheduler.current_priority_level;
+
+        if (!list_is_empty(&scheduler.ready_queues[lvl]))
         {
-            Process *process = (Process *)scheduler.processes[i]->data;
+            Node *node = list_get_first(&scheduler.ready_queues[lvl]);
+            Process *process = (Process *)node->data;
 
-            info_array[count].pid = process->pid;
-            info_array[count].parent_pid = process->parent_pid;
+            scheduler.current_priority_level = (scheduler.current_priority_level - 1 + NUM_PRIORITIES) % NUM_PRIORITIES;
 
-            int j;
-            for (j = 0; j < 63 && process->name[j] != '\0'; j++)
-            {
-                info_array[count].name[j] = process->name[j];
-            }
-            info_array[count].name[j] = '\0';
-
-            info_array[count].priority = process->priority;
-            info_array[count].status = process->status;
-            info_array[count].stack_base = process->stack_base;
-            info_array[count].stack_pos = process->stack_pos;
-
-            info_array[count].is_foreground = (process->pid == scheduler.foreground_pid) ? 1 : 0;
-
-            count++;
+            return process->pid;
         }
+
+        scheduler.current_priority_level = (scheduler.current_priority_level - 1 + NUM_PRIORITIES) % NUM_PRIORITIES;
     }
 
-    return count;
+    return IDLE_PID;
 }
