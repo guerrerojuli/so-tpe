@@ -205,6 +205,7 @@ mvar 2 3
 
 - Los pipes solo soportan el encadenamiento de 2 comandos
 - La función de sleep (utilizada en el comando loop) hace busy waiting, utilizando _hlt() que lo hace más eficiente en términos de ejecuciones por segundo, pero sin embargo al correr un loop en background la shell comienza a funcionar más lento debido a esto. Lo óptimo sería tener una estructura separada para los procesos que están haciendo sleep, y consultarlos periódicamente si ya pasó el suficiente tiempo para levantarlos. No llegamos con el tiempo a implementar esto.
+- Nuestra shell no imprime con distintos colores, por lo tanto en el comando MVAR utilizamos el id como identificador.
 
 ## Notas de Implementación
 
