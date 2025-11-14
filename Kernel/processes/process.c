@@ -1,14 +1,13 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
-
-#include "include/process.h"
-#include "include/scheduler.h"
-#include "include/memoryManager.h"
-#include "include/lib.h"
-#include "include/pipe.h"
-#include "include/globals.h"
-#include "include/list.h"
+#include <process.h>
+#include <scheduler.h>
+#include <memoryManager.h>
+#include <lib.h>
+#include <pipe.h>
+#include <globals.h>
+#include <list.h>
 #include <stddef.h>
 
 extern void *_initialize_stack_frame(void *wrapper, void *code, void *stack_top, void *args);

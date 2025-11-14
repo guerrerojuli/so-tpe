@@ -1,12 +1,11 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
-
-#include "include/pipe.h"
-#include "include/scheduler.h"
-#include "include/memoryManager.h"
-#include "include/lib.h"
-#include "include/globals.h"
+#include <pipe.h>
+#include <scheduler.h>
+#include <memoryManager.h>
+#include <lib.h>
+#include <globals.h>
 #include <stddef.h>
 
 static int16_t get_pipe_index_by_id(uint16_t id);

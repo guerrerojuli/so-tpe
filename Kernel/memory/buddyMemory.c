@@ -1,13 +1,12 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
-
 #ifdef BUDDY
 
 #include <stdint.h>
 #include <stddef.h>
-#include "../include/lib.h"
-#include "../include/memoryManager.h"
+#include <lib.h>
+#include <memoryManager.h>
 
 #define PAGE_SIZE 4096
 

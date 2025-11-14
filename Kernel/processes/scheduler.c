@@ -2,12 +2,12 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
 #include <stddef.h>
-#include "include/scheduler.h"
-#include "include/list.h"
-#include "include/memoryManager.h"
-#include "include/pipe.h"
-#include "include/globals.h"
-#include "include/consoleDriver.h"
+#include <scheduler.h>
+#include <list.h>
+#include <memoryManager.h>
+#include <pipe.h>
+#include <globals.h>
+#include <consoleDriver.h>
 
 static uint16_t get_next_pid(void);
 
