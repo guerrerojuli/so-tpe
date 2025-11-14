@@ -65,10 +65,6 @@ typedef struct zone
     uintptr_t heap_base;
 } zone_t;
 
-void buddy_free_pages(page_t *page, int order);
-page_t *buddy_alloc_pages(int order);
-void buddy_add_memory(uint64_t nr_pages);
-
 #ifdef FIRSTFIT
 extern KHEAPLCAB kernel_heap;
 #endif

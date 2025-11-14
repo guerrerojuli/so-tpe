@@ -252,13 +252,13 @@ uint64_t sys_waitpid(uint64_t pid, uint64_t _unused1, uint64_t _unused2, uint64_
 
 uint64_t sys_pipe_open(uint64_t id, uint64_t mode, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4)
 {
-    int8_t result = pipe_open_for_pid(get_pid(), (uint16_t)id, (uint8_t)mode);
+    int8_t result = pipe_open(get_pid(), (uint16_t)id, (uint8_t)mode);
     return (uint64_t)result;
 }
 
 uint64_t sys_pipe_close(uint64_t id, uint64_t _unused1, uint64_t _unused2, uint64_t _unused3, uint64_t _unused4, uint64_t _unused5)
 {
-    int8_t result = pipe_close_for_pid(get_pid(), (uint16_t)id);
+    int8_t result = pipe_close(get_pid(), (uint16_t)id);
     return (uint64_t)result;
 }
 

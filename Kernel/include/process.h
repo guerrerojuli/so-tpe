@@ -7,6 +7,18 @@
 
 #define PROCESS_STACK_SIZE 4096
 
+typedef struct
+{
+    uint16_t pid;
+    uint16_t parent_pid;
+    char name[64];
+    uint8_t priority;
+    ProcessStatus status;
+    void *stack_base;
+    void *stack_pos;
+    uint8_t is_foreground;
+} ProcessInfo;
+
 typedef struct Process
 {
     uint16_t pid;
@@ -22,9 +34,6 @@ typedef struct Process
     uint8_t unkillable;
 
     uint16_t quantum_consumed_count;
-    uint8_t last_quantum_used;
-    uint8_t quantum_usage_percent;
-    uint8_t is_io_bound;
 
     uint16_t waiting_for_pid;
     List zombie_children;
@@ -34,5 +43,7 @@ int8_t init_process(Process *process, uint16_t pid, uint16_t parent_pid,
                     MainFunction code, char **args, char *name,
                     uint8_t priority, int16_t fds[3], uint8_t unkillable);
 void free_process(Process *process);
+int16_t get_process_fd(uint8_t fd_index);
+int32_t get_process_info(ProcessInfo *info_array, uint32_t max_count);
 
 #endif

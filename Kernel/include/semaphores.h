@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define MAX_SEMAPHORES 4096
+
 typedef uint16_t sem_t;
 
 typedef struct SemaphoreManagerCDT *SemaphoreManagerADT;
