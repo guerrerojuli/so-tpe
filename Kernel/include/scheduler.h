@@ -9,7 +9,7 @@
 #define IDLE_PID 0
 #define NUM_PRIORITIES 5
 #define AGING_THRESHOLD 10
-#define CALCULATE_QUANTUM(priority) (4 * (1 << priority))
+#define CALCULATE_QUANTUM(priority) (4 * (1 << (priority)))
 
 typedef struct
 {

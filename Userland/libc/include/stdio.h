@@ -5,7 +5,7 @@
 
 #define EOF (-1)
 
-typedef int FILE;
+typedef int FILE; //-V677
 
 #define STDIN 0
 #define STDOUT 1
