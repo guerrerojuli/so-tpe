@@ -69,9 +69,6 @@ int8_t init_process(Process *process, uint16_t pid, uint16_t parent_pid,
     process->return_value = 0;
 
     process->quantum_consumed_count = 0;
-    process->last_quantum_used = 0;
-    process->quantum_usage_percent = 100;
-    process->is_io_bound = 0;
 
     process->waiting_for_pid = 0;
     list_init(&process->zombie_children);

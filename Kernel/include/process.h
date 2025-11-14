@@ -22,9 +22,6 @@ typedef struct Process
     uint8_t unkillable;
 
     uint16_t quantum_consumed_count;
-    uint8_t last_quantum_used;
-    uint8_t quantum_usage_percent;
-    uint8_t is_io_bound;
 
     uint16_t waiting_for_pid;
     List zombie_children;

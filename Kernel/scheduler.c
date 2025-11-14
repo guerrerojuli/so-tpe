@@ -1,7 +1,6 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 
-
 #include <stddef.h>
 #include "include/scheduler.h"
 #include "include/list.h"
@@ -9,6 +8,8 @@
 #include "include/pipe.h"
 #include "include/globals.h"
 #include "include/consoleDriver.h"
+
+#define CALCULATE_QUANTUM(priority) (4 * (1 << priority))
 
 typedef struct
 {
@@ -26,45 +27,6 @@ typedef struct
 } Scheduler;
 
 static Scheduler scheduler;
-
-static int16_t calculate_base_quantum(uint8_t priority)
-{
-    return 4 * (1 << priority);
-}
-
-static int16_t calculate_adjusted_quantum(Process *process)
-{
-    int16_t base_quantum = calculate_base_quantum(process->priority);
-
-    if (process->is_io_bound && process->quantum_usage_percent > 0)
-    {
-
-        int16_t adjusted = (base_quantum * 100) / process->quantum_usage_percent;
-
-        if (adjusted > base_quantum * 4)
-        {
-            adjusted = base_quantum * 4;
-        }
-
-        return adjusted;
-    }
-
-    return base_quantum;
-}
-
-static void update_io_bound_status(Process *process, uint8_t quantum_used, int16_t total_quantum)
-{
-    if (total_quantum > 0)
-    {
-        uint8_t usage_percent = (quantum_used * 100) / total_quantum;
-
-        process->quantum_usage_percent = (process->quantum_usage_percent * 3 + usage_percent) / 4;
-
-        process->is_io_bound = (process->quantum_usage_percent < 50);
-
-        process->last_quantum_used = quantum_used;
-    }
-}
 
 void scheduler_init()
 {
@@ -219,13 +181,6 @@ int8_t set_status(uint16_t pid, ProcessStatus new_status)
 
     if (new_status == BLOCKED)
     {
-
-        if (pid == scheduler.current_pid && scheduler.initial_quantum > 0)
-        {
-            int16_t quantum_used = scheduler.initial_quantum - scheduler.remaining_quantum;
-            update_io_bound_status(process, quantum_used, scheduler.initial_quantum);
-        }
-
         uint8_t old_priority = process->priority;
         if (process->priority > 0)
         {
@@ -394,12 +349,9 @@ uint16_t get_foreground_pid()
 
 void yield()
 {
-
     if (scheduler.processes[scheduler.current_pid] != NULL && scheduler.initial_quantum > 0)
     {
         Process *current_process = (Process *)scheduler.processes[scheduler.current_pid]->data;
-        int16_t quantum_used = scheduler.initial_quantum - scheduler.remaining_quantum;
-        update_io_bound_status(current_process, quantum_used, scheduler.initial_quantum);
 
         if (current_process->priority > 0)
         {
@@ -461,9 +413,6 @@ void *schedule(void *current_rsp)
 
             if (scheduler.remaining_quantum == 0 && scheduler.initial_quantum > 0)
             {
-
-                update_io_bound_status(current_process, scheduler.initial_quantum, scheduler.initial_quantum);
-
                 current_process->quantum_consumed_count++;
 
                 if (current_process->quantum_consumed_count >= AGING_THRESHOLD && current_process->priority < NUM_PRIORITIES - 1)
@@ -486,7 +435,7 @@ void *schedule(void *current_rsp)
     scheduler.current_pid = get_next_pid();
     Process *next_process = (Process *)scheduler.processes[scheduler.current_pid]->data;
 
-    scheduler.initial_quantum = calculate_adjusted_quantum(next_process);
+    scheduler.initial_quantum = CALCULATE_QUANTUM(next_process->priority);
     scheduler.remaining_quantum = scheduler.initial_quantum;
 
     next_process->status = RUNNING;
